@@ -1,0 +1,79 @@
+PAKET LENGKAP HALAMAN TOKO SIAP ANTAR
+====================================
+
+Isi paket:
+- 35 halaman role-specific (pelanggan, mitra usaha, kurir, admin, superadmin)
+- 5 halaman E-Wallet (satu halaman untuk setiap role)
+- Total 40 file HTML, ditambah petunjuk ini.
+
+Aturan struktur:
+- Setiap halaman memiliki CSS di dalam <style> dan JavaScript aplikasi di dalam <script>.
+- Tiap role memiliki file dan menu sendiri.
+- Semua halaman role-specific memeriksa role profil pada koleksi Firestore `users`.
+- Lima E-Wallet memiliki formulir top-up, pencairan, rekening bank, dan riwayat permintaan.
+- Tampilan dan alur merupakan fondasi integrasi, bukan sistem transaksi uang yang sudah siap produksi.
+
+File Firebase:
+- Semua halaman mengimpor `./firebase-config.js`, yang harus tersedia di folder yang sama.
+- Modul tersebut harus mengekspor `auth` dan `db` dari Firebase Authentication dan Firestore.
+- Pastikan konfigurasi yang dipakai adalah proyek Firebase Toko Siap Antar yang benar.
+
+Koleksi yang digunakan sebagai asumsi awal:
+- `users` untuk profil akun dan role
+- `orders` untuk pesanan
+- `products` untuk katalog/stok
+- `ewallet_topups` untuk pengajuan top-up
+- `ewallet_withdrawals` untuk pengajuan pencairan
+- `ewallet_transactions` untuk mutasi saldo
+
+PENTING — sebelum produksi:
+1. Cocokkan nama koleksi dan field dengan database aktual. Ini belum diverifikasi terhadap proyek Firebase A Yudi.
+2. Susun Firestore Rules berdasarkan UID dan role; jangan mengandalkan menu/HTML sebagai keamanan.
+3. Pembayaran top-up belum terhubung ke payment gateway atau verifikasi bukti pembayaran otomatis.
+4. Saldo tidak otomatis dikreditkan hanya karena top-up disetujui.
+5. Pencairan belum mengunci/mengurangi saldo secara atomik. Jangan transfer berdasarkan permintaan tanpa proses verifikasi yang sah.
+6. Persetujuan status dan pembukuan saldo final perlu backend tepercaya (misalnya Cloud Functions/Cloud Run) dengan transaksi Firestore, validasi role, idempotency, dan audit log.
+7. Halaman operasional tertentu masih berupa fondasi tampilan dan pembacaan data. Alur persetujuan pesanan, checkout/pembayaran, kalkulasi ongkir, lokasi terdekat, serta pembagian saldo harus disambungkan dengan backend dan skema data yang disepakati.
+8. Uji dengan akun dan data dummy terlebih dahulu. Jangan gunakan pengujian superadmin untuk mengubah transaksi pelanggan sungguhan.
+
+Daftar file:
+- checkout-pelanggan.html
+- dashboard-admin.html
+- dashboard-kurir.html
+- dashboard-mitra-usaha.html
+- dashboard-pelanggan.html
+- dashboard-superadmin.html
+- data-kurir-admin.html
+- data-mitra-admin.html
+- data-pelanggan-admin.html
+- ewallet-admin.html
+- ewallet-kurir.html
+- ewallet-mitra-usaha.html
+- ewallet-pelanggan.html
+- ewallet-superadmin.html
+- harga-modal-mitra-usaha.html
+- keranjang-pelanggan.html
+- keuangan-admin.html
+- pemeriksaan-sistem-superadmin.html
+- pengantaran-kurir.html
+- pengaturan-admin.html
+- pengelolaan-akses-superadmin.html
+- pengembangan-superadmin.html
+- penghasilan-kurir.html
+- pengujian-superadmin.html
+- pesanan-masuk-mitra-usaha.html
+- pesanan-pelanggan.html
+- pesanan-tersedia-kurir.html
+- produk-admin.html
+- profil-kurir.html
+- profil-mitra-usaha.html
+- profil-pelanggan.html
+- riwayat-pelanggan.html
+- riwayat-pengantaran-kurir.html
+- riwayat-pesanan-mitra-usaha.html
+- semua-pesanan-admin.html
+- stok-produk-mitra-usaha.html
+- tagihan-pelanggan.html
+- toko-pelanggan.html
+- tracking-pelanggan.html
+- verifikasi-pencairan-admin.html
