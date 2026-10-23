@@ -1,0 +1,7 @@
+PETUNJUK E-WALLET TOKO SIAP ANTAR
+
+5 file: ewallet-pelanggan.html, ewallet-mitra-usaha.html, ewallet-kurir.html, ewallet-admin.html, ewallet-superadmin.html.
+CSS dan JavaScript aplikasi berada di masing-masing HTML. File mengimpor ./firebase-config.js untuk konfigurasi Firebase proyek.
+Koleksi yang digunakan: users, ewallet_topups, ewallet_withdrawals, ewallet_transactions. Field role users harus cocok: pelanggan, mitra_usaha, kurir, admin, superadmin.
+
+PENTING: Ini fondasi halaman dan pengajuan, bukan sistem pembayaran produksi. Top-up hanya mencatat pengajuan; payment gateway tidak terintegrasi. Verifikasi admin pada halaman ini hanya mengubah status dan TIDAK membukukan saldo. Pencairan tidak otomatis mengunci/memotong saldo. Sebelum produksi, implementasikan backend tepercaya (Cloud Functions/Cloud Run), transaksi Firestore atomik, idempotency, audit log, payment gateway, dan Firestore Rules ketat. Jangan deploy ke pengguna nyata sebelum aturan keamanan diuji. Sesuaikan field/collection dengan skema database aktual.
