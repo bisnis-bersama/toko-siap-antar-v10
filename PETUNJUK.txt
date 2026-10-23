@@ -1,7 +1,23 @@
-PETUNJUK E-WALLET TOKO SIAP ANTAR
+PERBAIKAN LIMA FILE E-WALLET TOKO SIAP ANTAR
 
-5 file: ewallet-pelanggan.html, ewallet-mitra-usaha.html, ewallet-kurir.html, ewallet-admin.html, ewallet-superadmin.html.
-CSS dan JavaScript aplikasi berada di masing-masing HTML. File mengimpor ./firebase-config.js untuk konfigurasi Firebase proyek.
-Koleksi yang digunakan: users, ewallet_topups, ewallet_withdrawals, ewallet_transactions. Field role users harus cocok: pelanggan, mitra_usaha, kurir, admin, superadmin.
+File di dalam ZIP adalah lima file sumber E-Wallet yang sudah diperbaiki:
+- ewallet-pelanggan.html
+- ewallet-mitra-usaha.html
+- ewallet-kurir.html
+- ewallet-admin.html
+- ewallet-superadmin.html
 
-PENTING: Ini fondasi halaman dan pengajuan, bukan sistem pembayaran produksi. Top-up hanya mencatat pengajuan; payment gateway tidak terintegrasi. Verifikasi admin pada halaman ini hanya mengubah status dan TIDAK membukukan saldo. Pencairan tidak otomatis mengunci/memotong saldo. Sebelum produksi, implementasikan backend tepercaya (Cloud Functions/Cloud Run), transaksi Firestore atomik, idempotency, audit log, payment gateway, dan Firestore Rules ketat. Jangan deploy ke pengguna nyata sebelum aturan keamanan diuji. Sesuaikan field/collection dengan skema database aktual.
+Perubahan:
+1. Tombol Keluar menjalankan signOut Firebase, lalu mengarahkan pengguna ke index.html.
+2. Setiap E-Wallet memiliki menu Halaman Utama menuju index.html.
+3. Setiap E-Wallet memiliki navigasi lengkap sesuai role, dengan tautan ke halaman yang telah disepakati.
+4. Navigasi dibuat responsif untuk HP dan desktop.
+
+Cara pasang:
+- Ekstrak ZIP.
+- Unggah lima file HTML ke root repositori GitHub yang sama dengan index.html dan firebase-config.js.
+- Timpa lima file E-Wallet lama.
+- Pastikan nama file halaman tujuan tetap sama persis.
+- Tes login, semua tautan navigasi, dan tombol Keluar.
+
+Catatan: ZIP ini berisi lima file E-Wallet saja. File halaman lain dan index.html tidak diubah.
