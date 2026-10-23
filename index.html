@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#00a85a">
+<title>Toko Siap Antar</title>
+<style>
+:root{--green:#00a85a;--cyan:#00c8d7;--yellow:#ffd400;--ink:#18312b;--muted:#66756f;--paper:#fffef0;--card:#fff;--line:#dceee5}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif;padding-bottom:82px}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(100deg,#009b4b,#00c9c9,#a9d900);padding:10px 14px;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--yellow)}
+.brand{display:flex;align-items:center;gap:8px;color:white;font-weight:800;text-shadow:0 1px 3px #246a40}
+.brand img{display:block;width:64px;height:52px;object-fit:contain;flex:0 0 auto}
+.welcome-text{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:560px}
+.welcome-text strong{font-size:clamp(12px,2vw,17px);line-height:1.25;color:#fff}
+.welcome-text span{font-size:clamp(9px,1.35vw,12px);line-height:1.35;color:#f2fff8;text-shadow:none}
+@media(max-width:520px){header{padding:8px 10px;gap:6px}.brand{gap:7px}.brand img{width:48px;height:46px}.welcome-text{max-width:calc(100vw - 160px)}.welcome-text strong{font-size:11px}.welcome-text span{font-size:9px}.head-actions{gap:5px}.head-actions button{padding:7px 8px;font-size:17px}}
+.head-actions{display:flex;gap:8px}
+.head-actions button{border:1px solid #ffffff80;background:#ffffff20;color:#fff;border-radius:12px;padding:8px 11px;font-size:20px}
+.promo{margin:8px 0 0;border-block:2px solid var(--yellow);background:linear-gradient(90deg,#00a85a,#00c8d7,#d8e500);padding:4px 0}
+.promo-window{overflow:hidden;background:#fff;border-radius:10px;min-height:135px}
+.promo-track{display:flex;align-items:center;width:max-content;animation:promoGeser 24s linear infinite;will-change:transform}
+.promo-track:hover{animation-play-state:paused}
+.promo-track img{display:block;flex:0 0 clamp(250px,42vw,520px);width:clamp(250px,42vw,520px);height:clamp(135px,22vw,220px);object-fit:contain;background:#fff;margin-right:8px}
+@media(max-width:600px){.promo-track img{flex-basis:78vw;width:78vw;height:clamp(145px,35vw,190px);margin-right:6px}}
+@media(min-width:1000px){.promo-track img{flex-basis:38vw;width:38vw;height:220px;margin-right:10px}}
+@keyframes promoGeser{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.promo-track{animation:none;overflow-x:auto;max-width:100%}}
+.quick-wrap{position:sticky;top:58px;z-index:15;background:#fffef0;padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.categories{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;padding:2px 0 9px;scrollbar-width:none}
+.categories::-webkit-scrollbar{display:none}
+.cat{flex:0 0 auto;border:0;border-radius:30px;background:#edf5f0;padding:10px 14px;color:#34433d;font-size:14px}
+.cat.active{background:linear-gradient(100deg,#00a85a,#00c8d7);color:white}
+.cat.menu{background:var(--yellow);color:#222}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #a8dfc6;border-radius:30px;padding:0 14px;box-shadow:0 1px 5px #0000000a}
+.search input{width:100%;border:0;outline:0;background:transparent;padding:13px 0;font-size:15px;color:#23352e}
+main{padding:10px 12px 18px;min-height:150px}
+.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.product{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:0 2px 5px #18312b12;display:flex;flex-direction:column}
+.product-photo{height:112px;background:linear-gradient(135deg,#e4fff2,#fafff0);display:flex;align-items:center;justify-content:center;padding:6px}
+.product-photo img{width:100%;height:100%;object-fit:contain}
+.product-info{padding:8px 7px 9px;display:flex;flex-direction:column;flex:1;text-align:center;gap:6px}
+.product-name{font-size:11px;line-height:1.35;min-height:29px;overflow-wrap:anywhere}
+.product-desc{font-size:9px;line-height:1.35;color:var(--muted);min-height:25px}
+.price{font-weight:800;color:#008b4c;font-size:12px}
+.actions{display:grid;grid-template-columns:30px 30px minmax(0,1fr);gap:4px;margin-top:auto}
+.actions button{border:0;border-radius:8px;min-height:29px;font-size:11px}
+.wa{background:#e0fff0}.cart{background:#fff7ce}.buy{background:#ffc400;color:#171717;font-weight:700}
+.notice{padding:20px 12px;text-align:center;color:#6b7770;background:#fff;border:1px solid var(--line);border-radius:12px}
+footer{margin:18px 12px 0;padding:22px 12px;background:#fff;text-align:center}
+footer h3{margin:0 0 16px;color:#009c54}
+.socials{display:flex;justify-content:center;gap:28px}
+.socials a{color:#222;text-decoration:none;font-size:13px}
+.bottom-nav{position:fixed;z-index:30;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:repeat(4,1fr);padding:7px 4px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -3px 12px #0000000c}
+.bottom-nav button{background:none;border:0;color:#777;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bottom-nav .ico{font-size:22px;line-height:1.2}
+.bottom-nav button:first-child{color:#009c54}
+@media(max-width:520px){.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-photo{height:125px}.product-name{font-size:12px}.product-desc{font-size:10px}.price{font-size:13px}.quick-wrap{top:58px}.promo-track img{height:125px}}
+@media(max-width:600px){.promo-window{min-height:145px;padding:6px 0}.promo-track img{height:133px;margin-top:0;margin-bottom:0}}
+@media(max-width:360px){.products{grid-template-columns:repeat(2,minmax(0,1fr))}.product-photo{height:105px}.cat{padding:9px 11px;font-size:13px}}
+
+/* Header putih dengan garis pelangi tipis */
+body{background:#f4fff7;color:var(--ink)}
+header{position:sticky;top:0;z-index:20;background:#fff;border:0;box-shadow:0 2px 7px rgba(0,80,40,.08);isolation:isolate}
+header::before,header::after{content:"";position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,#ffd400 0%,#00a85a 28%,#00c8d7 52%,#a9d900 76%,#ffd400 100%);pointer-events:none;z-index:1}
+header::before{top:0}header::after{bottom:0}
+.brand{color:#18312b;text-shadow:none;min-width:0}
+.brand img{background:#fff;object-fit:contain;border:1.5px solid transparent;border-radius:12px;padding:3px;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#ffd400 0%,#00a85a 30%,#00c8d7 58%,#a9d900 80%,#ffd400 100%) border-box;box-shadow:0 1px 4px rgba(0,120,65,.10)}
+.welcome-text strong{color:#008b4c;text-shadow:none}
+.welcome-text span{color:#52635b;text-shadow:none}
+.head-actions button{color:#008b4c;background:#f3fff7;border:1px solid #b9e5ce}
+.quick-wrap{background:#fffef0}
+.product{background:#fff}
+.product-photo{background:linear-gradient(135deg,#d9ffed,#f4ffe2)}
+@media(max-width:520px){header{padding:8px 10px}.brand img{width:48px;height:46px}.welcome-text{max-width:calc(100vw - 160px)}}
+
+/* Popup detail produk: foto, nama, harga, dan tombol aksi seragam dengan kartu produk */
+.product-photo{cursor:zoom-in}
+.product-zoom{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:64px 16px 24px;background:rgba(0,0,0,.84);overflow-y:auto}
+.product-zoom.show{display:flex}
+.product-zoom-close{position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;z-index:2;width:48px;height:48px;border:0;border-radius:50%;background:#fff;color:#173b32;font-size:30px;cursor:pointer;box-shadow:0 2px 10px #0003}
+.product-zoom-content{width:100%;max-width:650px;display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:auto}
+.product-zoom-image-wrap{width:100%;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:18px;overflow:hidden}
+.product-zoom img{display:block;width:100%;max-height:61vh;object-fit:contain;background:#fff}
+.product-zoom-name{color:#fff;text-align:center;font-size:18px;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
+.product-zoom-price{color:#ffd400;text-align:center;font-size:20px;font-weight:800}
+.product-zoom-actions{display:grid;grid-template-columns:54px 54px minmax(0,1fr);gap:8px;width:100%}
+.product-zoom-actions button{min-height:50px;border:0;border-radius:12px;font-size:20px;cursor:pointer}
+.product-zoom-actions .zoom-wa{background:#d9ffeb}
+.product-zoom-actions .zoom-cart{background:#fff3bd}
+.product-zoom-actions .zoom-buy{background:#ffc400;color:#171717;font-size:17px;font-weight:800}
+.product-zoom-actions button:active{transform:scale(.97)}
+.product-zoom-actions button:disabled{opacity:.7;cursor:default}
+@media(max-width:520px){.product-zoom{padding:62px 16px 24px}.product-zoom-content{max-width:100%}.product-zoom img{max-height:55vh}.product-zoom-name{font-size:17px}.product-zoom-actions{grid-template-columns:54px 54px minmax(0,1fr)}}
+
+/* MODE GELAP: biru neon, mode terang tetap hijau seperti semula */
+body[data-theme="dark"]{
+  --ink:#eaf7ff;--muted:#9eb8d0;--paper:#07111f;--card:#0c1b2e;--line:#173b5b;
+  background:#07111f!important;color:#eaf7ff!important;
+}
+body[data-theme="dark"] header{background:#09182a!important;box-shadow:0 2px 14px #00b7ff20!important}
+body[data-theme="dark"] header::before,
+body[data-theme="dark"] header::after{background:linear-gradient(90deg,#00e5ff,#1677ff,#00e5ff)!important}
+body[data-theme="dark"] .brand img{background:linear-gradient(#09182a,#09182a) padding-box,linear-gradient(135deg,#00e5ff,#1677ff) border-box!important}
+body[data-theme="dark"] .welcome-text strong{color:#00e5ff!important}
+body[data-theme="dark"] .welcome-text span{color:#b9dcf4!important}
+body[data-theme="dark"] .head-actions button{background:#0b2740!important;color:#00e5ff!important;border-color:#087ca8!important}
+body[data-theme="dark"] .promo{background:linear-gradient(90deg,#00e5ff,#1677ff,#00e5ff)!important;border-color:#00e5ff!important}
+body[data-theme="dark"] .quick-wrap{background:#07111f!important;border-color:#164267!important}
+body[data-theme="dark"] .cat{background:#102943;color:#c7e7ff}
+body[data-theme="dark"] .cat.active{background:linear-gradient(100deg,#0077ff,#00e5ff);color:#00111e;box-shadow:0 0 12px #00c8ff55}
+body[data-theme="dark"] .cat.menu{background:#00dfff;color:#00111e}
+body[data-theme="dark"] .search{background:#0c1b2e;border-color:#008ec4;box-shadow:0 0 10px #00b7ff12}
+body[data-theme="dark"] .search input{color:#eaf7ff}
+body[data-theme="dark"] .product{background:#0c1b2e!important;border-color:#174466;box-shadow:0 3px 12px #0006}
+body[data-theme="dark"] .product-photo{background:linear-gradient(135deg,#102943,#09182a)}
+body[data-theme="dark"] .price{color:#00e5ff}
+body[data-theme="dark"] .notice{background:#0c1b2e;color:#b9d5e8;border-color:#174466}
+body[data-theme="dark"] footer,
+body[data-theme="dark"] .bottom-nav{background:#09182a;color:#d9efff;border-color:#174466}
+body[data-theme="dark"] footer h3,
+body[data-theme="dark"] .bottom-nav button:first-child{color:#00e5ff}
+body[data-theme="dark"] .socials a{color:#c9e8ff}
+body[data-theme="dark"] .bottom-nav button{color:#8aa9c3}
+body[data-theme="dark"] .wa{background:#103e4c;color:#9ff6ff}
+body[data-theme="dark"] .cart{background:#4a3d12;color:#ffe66b}
+body[data-theme="dark"] .buy{background:#00dfff;color:#00111e}
+body[data-theme="dark"] .product-zoom-image-wrap{background:#0c1b2e}
+body[data-theme="dark"] .product-zoom-close{background:#0c1b2e;color:#00e5ff;border:1px solid #00bfff}
+body[data-theme="dark"] .product-zoom-actions .zoom-wa{background:#103e4c;color:#9ff6ff}
+body[data-theme="dark"] .product-zoom-actions .zoom-cart{background:#4a3d12;color:#ffe66b}
+body[data-theme="dark"] .product-zoom-actions .zoom-buy{background:#00dfff;color:#00111e}
+body[data-theme="dark"] .product-zoom-price{color:#00e5ff}
+body[data-theme="dark"] .partner-section{background:#0c1b2e!important;border-color:#174466!important}
+body[data-theme="dark"] .partner-section h3{color:#00e5ff}
+body[data-theme="dark"] .partner-section p{color:#9eb8d0!important}
+body[data-theme="dark"] .partner-dashboard{background:#102943!important;color:#d9efff!important}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img class="brand-logo-left" src="logo3.png" alt="Logo Toko Siap Antar">
+    <div class="welcome-text">
+      <strong>Selamat Datang di Toko Siap Antar!</strong>
+      <span>Belanja sparepart dan aksesori HP lebih mudah. Pesanan kami antar setelah pembayaran dikonfirmasi.</span>
+    </div>
+  </div>
+  <div class="head-actions"><button id="refresh" aria-label="Muat ulang">↻</button><button id="theme" aria-label="Ganti tema">☾</button></div>
+</header>
+<section class="promo" aria-label="Promo">
+  <div class="promo-window"><div class="promo-track" id="promoTrack">
+    <img src="silde1.png" alt="Promo 1"><img src="silde2.png" alt="Promo 2"><img src="silde3.png" alt="Promo 3"><img src="silde4.png" alt="Promo 4"><img src="silde5.png" alt="Promo 5"><img src="silde6.png" alt="Promo 6">
+    <img src="silde1.png" alt="Promo 1" aria-hidden="true"><img src="silde2.png" alt="Promo 2" aria-hidden="true"><img src="silde3.png" alt="Promo 3" aria-hidden="true"><img src="silde4.png" alt="Promo 4" aria-hidden="true"><img src="silde5.png" alt="Promo 5" aria-hidden="true"><img src="silde6.png" alt="Promo 6" aria-hidden="true">
+  </div></div>
+</section>
+<section class="quick-wrap">
+  <nav class="categories" id="categories" aria-label="Kategori">
+    <button class="cat menu" data-cat="__menu">☰ MENU</button>
+    <button class="cat active" data-cat="Semua">🏠 Semua</button>
+    <button class="cat" data-cat="LCD">📱 LCD</button>
+    <button class="cat" data-cat="Baterai">🔋 Baterai</button>
+    <button class="cat" data-cat="Flexible">🔌 Flexible</button>
+    <button class="cat" data-cat="IC">🧩 IC</button>
+    <button class="cat" data-cat="Charger">⚡ Charger</button>
+    <button class="cat" data-cat="Kamera">📷 Kamera</button>
+    <button class="cat" data-cat="Case">📱 Case</button>
+  </nav>
+  <label class="search"><span>🔎</span><input id="searchInput" type="search" placeholder="Cari produk, tipe HP, LCD, baterai..." autocomplete="off"></label>
+</section>
+<main><div id="products" class="products"><div class="notice" style="grid-column:1/-1">Memuat produk dari Google Sheets…</div></div></main>
+<footer><h3>🌐 Ikuti Kami</h3><div class="socials"><a href="#" id="facebook">● Facebook</a><a href="#" id="instagram">◎ Instagram</a><a href="#" id="whatsapp">◉ WhatsApp</a></div></footer>
+<nav class="bottom-nav" aria-label="Navigasi bawah">
+  <button id="homeBtn"><span class="ico">⌂</span>Home</button><button id="historyBtn"><span class="ico">▤</span>Riwayat</button><button id="cartBtn"><span class="ico">🛒 <sup id="cartCount">0</sup></span>Keranjang</button><button id="profileBtn"><span class="ico">👤</span>Profil</button>
+</nav>
+
+<div id="productZoom" class="product-zoom" role="dialog" aria-modal="true" aria-label="Detail produk">
+  <button type="button" id="productZoomClose" class="product-zoom-close" aria-label="Tutup popup">×</button>
+  <div class="product-zoom-content">
+    <div class="product-zoom-image-wrap">
+      <img id="productZoomImage" src="" alt="Foto produk">
+    </div>
+    <div id="productZoomName" class="product-zoom-name"></div>
+    <div id="productZoomPrice" class="product-zoom-price"></div>
+    <div class="product-zoom-actions">
+      <button type="button" class="zoom-wa" data-zoom-action="wa" aria-label="Tanya melalui WhatsApp">☏</button>
+      <button type="button" class="zoom-cart" data-zoom-action="cart" aria-label="Tambah ke keranjang">🛒</button>
+      <button type="button" class="zoom-buy" data-zoom-action="buy">Beli</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H23wsTKmR1grQgSAqULbUCM9wQdfx5u6RHJwrrbROG0/gviz/tq?sheet=MEMBER';
+const productsEl = document.getElementById('products');
+const searchInput = document.getElementById('searchInput');
+let allProducts = [];
+let activeCategory = 'Semua';
+let cart = [];
+try {
+  const savedCart = JSON.parse(localStorage.getItem('tsa_cart') || '[]');
+  cart = Array.isArray(savedCart) ? savedCart : [];
+} catch (error) {
+  cart = [];
+}
+const formatPrice = value => {
+  const n = Number(String(value ?? '').replace(/[^\d,-]/g,'').replace(/\./g,'').replace(',','.'));
+  return Number.isFinite(n) && n ? 'Rp ' + n.toLocaleString('id-ID') : (value ? String(value) : 'Hubungi kami');
+};
+function convertImage(url) {
+  if (!url) return '';
+  const s = String(url).trim();
+  const id = s.match(/(?:id=|\/d\/)([A-Za-z0-9_-]{15,})/);
+  if (id && /drive\.google\.com/.test(s)) return 'https://drive.google.com/thumbnail?id=' + id[1] + '&sz=w600';
+  return s;
+}
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderProducts() {
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = allProducts.filter(p => {
+    const matchesText = !q || p.searchText.includes(q);
+    const matchesCategory = activeCategory === 'Semua' || activeCategory === '__menu' ||
+      (p.name + ' ' + p.description).toLowerCase().includes(activeCategory.toLowerCase());
+    return matchesText && matchesCategory;
+  });
+  if (!filtered.length) {
+    productsEl.innerHTML = '<div class="notice" style="grid-column:1/-1">Produk tidak ditemukan.</div>';
+    return;
+  }
+  productsEl.innerHTML = filtered.map(p => `
+    <article class="product" data-product-id="${escapeHtml(p.id)}">
+      <div class="product-photo">${p.image ? `<img loading="lazy" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" onerror="this.style.display='none'">` : '<span>📦</span>'}</div>
+      <div class="product-info">
+        <div class="product-name">${escapeHtml(p.name)}</div>
+        <div class="product-desc">${escapeHtml(p.description || 'Pesanan Anda siap kami antar ke rumah dalam waktu sekitar ±1 jam setelah pembayaran dikonfirmasi.')}</div>
+        <div class="price">${escapeHtml(formatPrice(p.price))}</div>
+        <div class="actions">
+          <button class="wa" data-action="wa" data-id="${escapeHtml(p.id)}" aria-label="Tanya WhatsApp">☏</button>
+          <button class="cart" data-action="cart" data-id="${escapeHtml(p.id)}" aria-label="Tambah keranjang">🛒</button>
+          <button class="buy" data-action="buy" data-id="${escapeHtml(p.id)}">Beli</button>
+        </div>
+      </div>
+    </article>`).join('');
+}
+function updateCart() {
+  document.getElementById('cartCount').textContent = cart.reduce((sum,item)=>sum+(Number(item.qty)||0),0);
+  try { localStorage.setItem('tsa_cart', JSON.stringify(cart)); } catch (error) {}
+}
+function addProductToCart(p) {
+  const existing = cart.find(item => item.id === p.id);
+  if (existing) existing.qty = (Number(existing.qty) || 0) + 1;
+  else cart.push({id:p.id,name:p.name,price:p.price,qty:1});
+  updateCart();
+}
+function openWhatsApp(p, intro='Halo, saya ingin pesan: ') {
+  const message = intro + p.name + ' — ' + formatPrice(p.price);
+  window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener');
+}
+
+productsEl.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const p = allProducts.find(item => item.id === btn.dataset.id);
+  if (!p) return;
+  if (btn.dataset.action === 'wa') openWhatsApp(p, 'Halo, saya mau tanya produk: ');
+  if (btn.dataset.action === 'buy') {
+    addProductToCart(p);
+    location.href = 'keranjang.html';
+    return;
+  }
+  if (btn.dataset.action === 'cart') {
+    addProductToCart(p);
+    btn.textContent = '✓';
+    setTimeout(()=>{if(btn.isConnected)btn.textContent='🛒'},700);
+  }
+});
+searchInput.addEventListener('input', renderProducts);
+document.getElementById('categories').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-cat]'); if(!btn)return;
+  if(btn.dataset.cat==='__menu'){ alert('Pilih kategori produk atau gunakan pencarian.'); return; }
+  activeCategory=btn.dataset.cat;
+  document.querySelectorAll('.cat').forEach(el=>el.classList.toggle('active',el===btn));
+  renderProducts();
+});
+document.getElementById('refresh').onclick=()=>location.reload();
+document.getElementById('homeBtn').onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+document.getElementById('cartBtn').onclick=()=>{
+  if(!cart.length){alert('Keranjang masih kosong.');return;}
+  location.href='keranjang.html';
+};
+document.getElementById('historyBtn').onclick=()=>{location.href='login.html?next=riwayat.html';};
+document.getElementById('profileBtn').onclick=()=>{location.href='profil.html';};
+document.getElementById('facebook').onclick=e=>{e.preventDefault();alert('Tambahkan tautan Facebook toko pada HTML.');};
+document.getElementById('instagram').onclick=e=>{e.preventDefault();alert('Tambahkan tautan Instagram toko pada HTML.');};
+document.getElementById('whatsapp').onclick=e=>{e.preventDefault();window.open('https://wa.me/','_blank','noopener');};
+document.getElementById('theme').onclick=()=>{
+  const dark=document.body.dataset.theme!=='dark';
+  document.body.dataset.theme=dark?'dark':'light';
+  document.getElementById('theme').textContent=dark?'☀':'☾';
+};
+function parseGviz(raw) {
+  const start=raw.indexOf('{'), end=raw.lastIndexOf('}');
+  if(start<0||end<start) throw new Error('Format data Google Sheets tidak dikenali.');
+  return JSON.parse(raw.slice(start,end+1));
+}
+fetch(SHEET_URL, {cache:'no-store'})
+.then(res=>{if(!res.ok)throw new Error('HTTP '+res.status);return res.text();})
+.then(raw=>{
+  const json=parseGviz(raw);
+  const rows=json.table && json.table.rows;
+  if(!rows)throw new Error('Tab spreadsheet tidak memiliki data yang bisa dibaca.');
+  allProducts=rows.map((row,index)=>{
+    const c=row.c||[];
+    const name=c[1]?.v ?? c[0]?.v ?? '';
+    const description=c[2]?.v ?? '';
+    const price=c[3]?.v ?? '';
+    const image=convertImage(c[4]?.v ?? '');
+    return {id:String(index),name:String(name).trim(),description:String(description).trim(),price,image,searchText:(String(name)+' '+String(description)).toLowerCase()};
+  }).filter(p=>p.name);
+  if(!allProducts.length)throw new Error('Tidak ada produk pada tab spreadsheet yang dipilih.');
+  renderProducts();
+})
+.catch(err=>{
+  productsEl.innerHTML='<div class="notice" style="grid-column:1/-1;color:#b42318">Produk gagal dimuat: '+escapeHtml(err.message)+'. Pastikan tab spreadsheet yang dipakai benar dan aksesnya publik.</div>';
+});
+updateCart();
+
+/* Popup foto produk: ID diambil langsung dari kartu, aman untuk nama produk duplikat */
+const productZoom = document.getElementById('productZoom');
+const productZoomImage = document.getElementById('productZoomImage');
+const productZoomName = document.getElementById('productZoomName');
+const productZoomPrice = document.getElementById('productZoomPrice');
+let zoomProductId = null;
+
+function closeProductZoom() {
+  productZoom.classList.remove('show');
+  productZoomImage.src = '';
+  zoomProductId = null;
+  document.body.style.overflow = '';
+}
+
+productsEl.addEventListener('click', function(e) {
+  if (e.target.closest('button')) return;
+  const img = e.target.closest('.product-photo img');
+  if (!img || !img.src) return;
+  const card = img.closest('.product');
+  const id = card?.dataset.productId;
+  const p = allProducts.find(item => item.id === id);
+  if (!p) return;
+
+  zoomProductId = p.id;
+  productZoomImage.src = img.src;
+  productZoomImage.alt = p.name;
+  productZoomName.textContent = p.name;
+  productZoomPrice.textContent = formatPrice(p.price);
+  productZoom.classList.add('show');
+  document.body.style.overflow = 'hidden';
+});
+
+productZoom.addEventListener('click', function(e) {
+  if (e.target === productZoom) {
+    closeProductZoom();
+    return;
+  }
+
+  const btn = e.target.closest('[data-zoom-action]');
+  if (!btn) return;
+  const p = allProducts.find(item => item.id === zoomProductId);
+  if (!p) return;
+
+  const action = btn.dataset.zoomAction;
+  if (action === 'wa') {
+    openWhatsApp(p, 'Halo, saya mau tanya produk: ');
+    return;
+  }
+
+  if (action === 'cart' || action === 'buy') {
+    addProductToCart(p);
+    if (action === 'buy') {
+      location.href = 'keranjang.html';
+      return;
+    }
+    btn.textContent = '✓';
+    btn.disabled = true;
+    setTimeout(() => {
+      if (btn.isConnected) {
+        btn.textContent = '🛒';
+        btn.disabled = false;
+      }
+    }, 700);
+  }
+});
+
+document.getElementById('productZoomClose').addEventListener('click', closeProductZoom);
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeProductZoom();
+});
+</script>
+
+<section class="partner-section" style="max-width:1000px;margin:18px auto;padding:14px;background:#fff;border:1px solid #e2e8e4;border-radius:14px"><h3>Gabung Mitra Toko Siap Antar</h3><p style="font-size:13px;color:#66736c">Pendaftaran mitra menunggu verifikasi admin.</p><a href="daftar-mitra-pengantaran.html" style="display:inline-block;margin:4px;padding:10px 12px;background:#ffc107;color:#202020;border-radius:8px;text-decoration:none;font-weight:bold">Daftar Mitra Pengantaran</a><a href="daftar-mitra-usaha.html" style="display:inline-block;margin:4px;padding:10px 12px;background:#ffc107;color:#202020;border-radius:8px;text-decoration:none;font-weight:bold">Daftar Mitra Usaha</a><a href="mitra-usaha.html" class="partner-dashboard" style="display:inline-block;margin:4px;padding:10px 12px;background:#eee;color:#202020;border-radius:8px;text-decoration:none;font-weight:bold">Dashboard Mitra Usaha</a></section>
+</body>
+</html>

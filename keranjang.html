@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Keranjang Belanja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<style>
+
+ :root{--green:#00a85a;--cyan:#00c8d7;--yellow:#ffd400;--ink:#18312b;--paper:#fffef0;--line:#dceee5}
+*{box-sizing:border-box}
+body{
+font-family:Arial,Helvetica,sans-serif;
+margin:0;
+background:var(--paper);
+color:var(--ink);
+padding-bottom:30px;
+}
+header{
+background:#fff;
+color:#008b4c;
+padding:16px 12px;
+text-align:center;
+font-weight:800;
+font-size:20px;
+border-top:3px solid transparent;
+border-bottom:3px solid transparent;
+border-image:linear-gradient(90deg,#ffd400,#00a85a,#00c8d7,#a9d900,#ffd400) 1;
+}
+
+.card{
+background:#fff;
+margin:12px;
+padding:14px;
+border:1px solid var(--line);
+border-radius:15px;
+box-shadow:0 2px 7px #18312b12;
+}
+
+.harga{
+color:#008b4c;
+font-weight:bold;
+}
+
+button{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+margin:3px;
+cursor:pointer;
+}
+
+.green{
+background:linear-gradient(100deg,#00a85a,#00c8d7);
+color:white;
+}
+
+.gray{
+background:#9ca3af;
+color:white;
+}
+
+.location-actions{margin:10px 12px}.gps-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin:12px}.gps-status{font-size:13px;line-height:1.5;color:#52645d;white-space:pre-wrap}.map-link{display:inline-block;color:#087b45;font-weight:bold;margin-top:8px;overflow-wrap:anywhere}
+.section-title{margin:18px 12px 8px;font-size:17px}
+input{
+display:block;
+width:calc(100% - 24px);
+margin:10px 12px;
+padding:13px 12px;
+border-radius:12px;
+border:1px solid #a8dfc6;
+background:#fff;
+font-size:15px;
+}
+.checkout,.clearBtn{width:calc(100% - 24px);margin:10px 12px;}
+
+
+.checkout{
+display:block;
+width:95%;
+margin:10px;
+background:linear-gradient(90deg,#16a34a,#f97316);
+color:white;
+padding:14px;
+border-radius:10px;
+border:none;
+font-weight:bold;
+font-size:16px;
+text-align:center;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.clearBtn{
+display:block;
+width:95%;
+margin:10px;
+background:#f97316;
+color:white;
+padding:14px;
+border-radius:10px;
+border:none;
+font-weight:bold;
+font-size:16px;
+text-align:center;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+
+.location-actions button{padding:11px 14px;font-size:14px;border-radius:10px}
+.checkout{background:linear-gradient(90deg,#00a85a,#00c8d7);color:#fff}
+.clearBtn{background:#ffd400;color:#222}
+@media(max-width:520px){
+  header{font-size:18px}
+  .card{margin:10px;padding:13px}
+  .checkout,.clearBtn{width:calc(100% - 20px);margin:10px}
+}
+
+.add-product-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px;
+  padding:15px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(100deg,#00a85a,#00c8d7);
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  text-align:center;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+.add-product-btn:active{
+  transform:scale(.98);
+}
+
+</style>
+</head>
+
+<body>
+
+<header>🛒 Keranjang Belanja</header>
+
+<div id="cartList"></div>
+
+<section class="gps-card">
+  <h3 style="margin:0 0 8px">📍 Lokasi Pengiriman</h3>
+  <p style="margin:0 0 12px">Ambil lokasi GPS HP untuk menghitung jarak dan ongkos kirim. Lokasi ini juga disimpan agar mitra dapat membuka titik pengantaran di Google Maps.</p>
+  <button class="checkout" style="width:100%;margin:0" type="button" onclick="gunakanLokasi()">📍 Gunakan Lokasi Saya</button>
+  <div id="gpsStatus" class="gps-status" role="status" style="margin-top:10px">Lokasi belum diambil. Tekan tombol di atas.</div>
+  <a id="mapLink" class="map-link" href="#" target="_blank" rel="noopener" hidden>🗺️ Buka lokasi di Google Maps</a>
+</section>
+
+<button class="checkout" onclick="lanjutBayar()">Checkout</button>
+<button class="clearBtn" onclick="kosongkan()">Kosongkan Keranjang</button>
+<script>
+
+/* ================= DATA ================= */
+
+const tokoLat = -6.883831;
+const tokoLng = 108.302788;
+
+// Index menyimpan pilihan di "tsa_cart" dengan properti name/price.
+// Halaman ini memakai "cart" dengan properti nama/harga. Satukan keduanya agar
+// produk yang dipilih di index otomatis muncul di halaman keranjang.
+function parseHarga(value){
+  if(typeof value === "number") return value;
+  const cleaned = String(value ?? "").replace(/[^0-9,.-]/g,"").replace(/\./g,"").replace(",",".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+function normalisasiCart(items){
+  if(!Array.isArray(items)) return [];
+  return items.map((p,i)=>({
+    id:String(p.id ?? i),
+    nama:String(p.nama ?? p.name ?? p.title ?? "Produk"),
+    harga:parseHarga(p.harga ?? p.price ?? p.hargaJual ?? 0),
+    qty:Math.max(1,parseInt(p.qty ?? p.jumlah ?? 1,10) || 1)
+  }));
+}
+const cartLama = normalisasiCart(JSON.parse(localStorage.getItem("cart") || "[]"));
+const cartIndex = normalisasiCart(JSON.parse(localStorage.getItem("tsa_cart") || "[]"));
+let cart = cartIndex.length ? cartIndex : cartLama;
+if(cart.length){
+  localStorage.setItem("cart",JSON.stringify(cart));
+}
+
+let tujuanLat = null;
+let tujuanLng = null;
+let ongkir = 0;
+let jarakFix = 0;
+let minimalBelanja = 0;
+
+let namaDesa="-";
+let namaKecamatan="-";
+let gpsAddress = "";
+try {
+  const savedCheckout = JSON.parse(localStorage.getItem("checkoutData") || "{}");
+  if (Number.isFinite(Number(savedCheckout.lat)) && Number.isFinite(Number(savedCheckout.lng)) &&
+      savedCheckout.lat !== null && savedCheckout.lng !== null) {
+    tujuanLat = Number(savedCheckout.lat);
+    tujuanLng = Number(savedCheckout.lng);
+    jarakFix = hitungJarakKm(tokoLat, tokoLng, tujuanLat, tujuanLng);
+    ongkir = Math.max(5000, Math.ceil(jarakFix * 2000 / 1000) * 1000);
+    gpsAddress = savedCheckout.gpsLink || "https://www.google.com/maps?q=" + tujuanLat + "," + tujuanLng;
+  }
+} catch(e) {}
+
+
+/* ================= FORMAT RUPIAH ================= */
+
+function rupiah(a){
+return Math.round(a).toLocaleString("id-ID");
+}
+function hitungJarakKm(lat1,lon1,lat2,lon2){
+  const R=6371, rad=v=>v*Math.PI/180;
+  const dLat=rad(lat2-lat1), dLon=rad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function renderGpsStatus(){
+  const status=document.getElementById("gpsStatus");
+  const link=document.getElementById("mapLink");
+  if(tujuanLat!==null && tujuanLng!==null){
+    status.textContent="Lokasi berhasil disimpan.\nKoordinat: "+tujuanLat.toFixed(6)+", "+tujuanLng.toFixed(6)+"\nJarak garis lurus: "+jarakFix.toFixed(1)+" km\nOngkos kirim: Rp "+rupiah(ongkir)+"\nCatatan: jarak ini estimasi GPS garis lurus, bukan jarak jalan.";
+    link.href="https://www.google.com/maps?q="+tujuanLat+","+tujuanLng;
+    link.hidden=false;
+  }
+}
+function gunakanLokasi(){
+  const status=document.getElementById("gpsStatus");
+  if(!navigator.geolocation){status.textContent="Browser tidak mendukung GPS. Aktifkan lokasi atau coba browser lain.";return;}
+  status.textContent="Meminta izin lokasi HP…";
+  navigator.geolocation.getCurrentPosition(pos=>{
+    tujuanLat=pos.coords.latitude; tujuanLng=pos.coords.longitude;
+    jarakFix=hitungJarakKm(tokoLat,tokoLng,tujuanLat,tujuanLng);
+    // Ongkir: Rp2.000/km (pembulatan ribuan), minimum Rp5.000.
+    ongkir=Math.max(5000,Math.ceil(jarakFix*2)*1000);
+    gpsAddress="https://www.google.com/maps?q="+tujuanLat+","+tujuanLng;
+    let old={};try{old=JSON.parse(localStorage.getItem("checkoutData")||"{}")}catch(e){}
+    localStorage.setItem("checkoutData",JSON.stringify({...old,lat:tujuanLat,lng:tujuanLng,ongkir,jarakKm:jarakFix,gpsLink:gpsAddress}));
+    renderCart();renderGpsStatus();
+  },err=>{
+    status.textContent=err.code===1?"Izin lokasi ditolak. Izinkan akses lokasi untuk situs ini lalu coba lagi.":err.code===3?"GPS terlalu lama merespons. Coba lagi di tempat terbuka.":"Lokasi gagal diambil. Pastikan GPS HP aktif.";
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+
+/* ================= RENDER CART ================= */
+
+
+function renderCart(){
+  const list = document.getElementById("cartList");
+  list.innerHTML = "";
+
+  let total = 0;
+
+  cart.forEach((p,i)=>{
+    const sub = p.harga * p.qty;
+    total += sub;
+
+    list.innerHTML += `
+      <div class="card">
+        <b>${escapeText(p.nama)}</b><br>
+        <span class="harga">Rp ${rupiah(p.harga)}</span><br>
+        <button onclick="kurang(${i})">-</button>
+        ${p.qty}
+        <button onclick="tambah(${i})">+</button>
+        <button onclick="hapus(${i})">Hapus</button>
+        <br>
+        Subtotal : Rp ${rupiah(sub)}
+      </div>
+    `;
+  });
+
+  const totalBayar = total + ongkir;
+
+  list.innerHTML += `
+    <div class="card">
+      <b>Total Barang : Rp ${rupiah(total)}</b><br>
+      <b>Ongkir : Rp ${rupiah(ongkir)}</b>
+      <hr>
+      <b style="color:#008b4c;font-size:18px">
+        TOTAL BAYAR : Rp ${rupiah(totalBayar)}
+      </b>
+    </div>
+
+    <a href="index.html" class="add-product-btn">
+      🛍️ Tambah Produk
+    </a>
+  `;
+}
+
+function escapeText(value){
+  return String(value ?? "").replace(/[&<>"']/g,c=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[c]));
+}
+
+
+/* ================= CART CONTROL ================= */
+
+function tambah(i){
+cart[i].qty++;
+simpan();
+}
+
+function kurang(i){
+cart[i].qty--;
+if(cart[i].qty<=0) cart.splice(i,1);
+simpan();
+}
+
+function hapus(i){
+cart.splice(i,1);
+simpan();
+}
+
+function simpan(){
+  localStorage.setItem("cart",JSON.stringify(cart));
+  // Tetap simpan format yang dipahami index, supaya kedua halaman sinkron.
+  localStorage.setItem("tsa_cart",JSON.stringify(cart.map(p=>({
+    id:p.id,name:p.nama,price:p.harga,qty:p.qty
+  }))));
+  renderCart();
+}
+
+function kosongkan(){
+  localStorage.removeItem("cart");
+  localStorage.removeItem("tsa_cart");
+  location.reload();
+}
+
+/* ================= CHECKOUT ================= */
+function lanjutBayar(){
+  if(cart.length === 0){
+    popup("Keranjang masih kosong");
+    return;
+  }
+  if(tujuanLat === null || tujuanLng === null){
+    popup("Ambil lokasi GPS terlebih dahulu agar ongkos kirim dapat dihitung dan titik pengantaran bisa digunakan mitra.");
+    return;
+  }
+  // GPS dan ongkir disimpan di keranjang; alamat penerima dipilih pada checkout.
+  localStorage.setItem("cart", JSON.stringify(cart));
+  localStorage.setItem("tsa_cart", JSON.stringify(cart.map(p=>({
+    id:p.id, name:p.nama, price:p.harga, qty:p.qty
+  }))));
+  let existing = {};
+  try { existing = JSON.parse(localStorage.getItem("checkoutData") || "{}"); } catch(e) {}
+  localStorage.setItem("checkoutData", JSON.stringify({
+    ...existing,
+    ongkir: ongkir,
+    jarakKm: jarakFix,
+    lat: tujuanLat,
+    lng: tujuanLng,
+    gpsLink: tujuanLat !== null && tujuanLng !== null ? "https://www.google.com/maps?q="+tujuanLat+","+tujuanLng : "",
+    minimalBelanja: minimalBelanja
+  }));
+  window.location.href = "checkout.html";
+}
+
+/* ================= POPUP ================= */
+
+function popup(pesan){
+
+let box=document.createElement("div");
+box.id="popupBox";
+
+box.style.position="fixed";
+box.style.top="0";
+box.style.left="0";
+box.style.width="100%";
+box.style.height="100%";
+box.style.background="rgba(0,0,0,0.5)";
+box.style.display="flex";
+box.style.alignItems="center";
+box.style.justifyContent="center";
+box.style.zIndex="9999";
+
+box.innerHTML=
+
+`<div style="background:white;padding:20px;border-radius:12px;width:80%;max-width:300px;text-align:center">
+
+<h3 style="color:#008b4c;margin-top:0">
+TOKO SIAP ANTAR
+</h3>
+
+<p>${pesan}</p>
+
+<button onclick="this.parentElement.parentElement.remove()"
+style="background:linear-gradient(100deg,#00a85a,#00c8d7);color:white;border:none;padding:10px 20px;border-radius:6px">
+OK
+</button>
+
+</div>`;
+
+document.body.appendChild(box);
+
+}
+
+renderCart();
+renderGpsStatus();
+
+window.addEventListener("load",function(){
+  if(cart.length) updateCartStorageSafe();
+});
+
+function updateCartStorageSafe(){
+  localStorage.setItem("cart",JSON.stringify(cart));
+  localStorage.setItem("tsa_cart",JSON.stringify(cart.map(p=>({
+    id:p.id,name:p.nama,price:p.harga,qty:p.qty
+  }))));
+}
+</script>
+
+</body>
+</html>

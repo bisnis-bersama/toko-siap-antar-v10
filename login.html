@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffc107">
+<title>Login | Toko Siap Antar</title>
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--gold:#ffc107;--ink:#202020;--green:#008b5a;--muted:#65736d}
+*{box-sizing:border-box}body{margin:0;background:#f3f6f4;color:#222;font-family:Arial,Helvetica,sans-serif}
+.site-header{background:#202020;color:#fff;border-bottom:6px solid var(--gold);padding:18px 20px}
+.site-header strong{display:block;font-size:24px}.site-header p{margin:6px 0 0;color:#ddd}
+.wrap{width:min(100% - 28px,560px);margin:28px auto}.card{background:#fff;border:1px solid #e0e7e3;border-radius:18px;padding:24px;box-shadow:0 5px 20px #102a1b0a}
+h1{font-size:28px;margin:0 0 10px}.muted{color:var(--muted);line-height:1.5}
+label{display:block;font-weight:700;margin:16px 0 7px}input{width:100%;padding:14px;border:1px solid #cbd5d0;border-radius:10px;font:inherit;background:#fff;color:#222}input:focus{outline:2px solid #ffc107;border-color:#b88b00}
+button,.linkbtn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 18px;border:0;border-radius:10px;background:var(--gold);color:#171717;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.linkbtn{background:#eef2f0}
+#notice{padding:13px 14px;border-radius:10px;margin:16px 0;line-height:1.45;overflow-wrap:anywhere;background:#fff0ef;color:#a12420}#notice[hidden]{display:none}#notice.success{background:#e9f8ef;color:#176c43}#notice.info{background:#fff8dc;color:#765700}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}.role{border:1px solid #dce7e1;border-radius:12px;padding:13px;background:#f8fcf9}.role b{display:block;margin-bottom:5px}.role small{color:var(--muted);line-height:1.4}.foot{font-size:13px;color:var(--muted);margin-top:18px;line-height:1.5}
+@media(max-width:420px){.card{padding:19px}.roles{grid-template-columns:1fr}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<header class="site-header"><strong>🟨 TOKO SIAP ANTAR</strong><p>Login satu pintu untuk semua jenis akun</p></header>
+<main class="wrap"><section class="card">
+<h1>Masuk ke akun</h1><p class="muted">Masukkan email dan password yang terdaftar. Sistem akan membaca role akun dari <code>users/{UID}</code> di Firestore dan mengarahkan ke halaman sesuai role.</p>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<form id="loginForm">
+<label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" required placeholder="nama@email.com">
+<label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Masukkan password">
+<div class="actions"><button id="submitBtn" type="submit">Masuk</button><a class="linkbtn" href="index.html">Kembali ke toko</a><a class="linkbtn" href="checkout.html">Daftar pelanggan</a></div>
+</form>
+<div class="roles">
+<div class="role"><b>🧰 Admin</b><small>Mengelola pesanan, akun, mitra, kurir, dan sistem.</small></div>
+<div class="role"><b>🏪 Mitra usaha</b><small>Mengelola toko dan menyiapkan barang pesanan.</small></div>
+<div class="role"><b>🛵 Kurir</b><small>Menerima tugas dan mengantarkan pesanan.</small></div>
+<div class="role"><b>🛍️ Pelanggan</b><small>Belanja, checkout, dan melihat pesanan.</small></div>
+</div>
+<p class="foot">Catatan: akun harus sudah terdaftar di Firebase Authentication dan memiliki dokumen <code>users</code> dengan Document ID yang sama persis dengan UID akun. Login tidak mengubah role atau status akun.</p>
+</section></main>
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js';
+
+// Konfigurasi proyek Toko Siap Antar yang terlihat pada file sebelumnya.
+const firebaseConfig = {
+  apiKey: 'AIzaSyBxqZhl6t3RwrXMwVdJeIkg0NzGfwvlweM',
+  authDomain: 'toko-siap-antar-9a7bb.firebaseapp.com',
+  projectId: 'toko-siap-antar-9a7bb',
+  storageBucket: 'toko-siap-antar-9a7bb.firebasestorage.app',
+  messagingSenderId: '351335838712',
+  appId: '1:351335838712:web:14cc2c7b91bb0c9e1b5c0d'
+};
+
+// Gunakan app bernama khusus agar tidak salah mengambil default app jika ada app lain.
+const APP_NAME = 'TokoSiapAntarLogin';
+const existingApp = getApps().find(app => app.name === APP_NAME);
+const app = existingApp || initializeApp(firebaseConfig, APP_NAME);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const form = document.getElementById('loginForm');
+const btn = document.getElementById('submitBtn');
+const notice = document.getElementById('notice');
+let routing = false;
+let manualSubmit = false;
+
+function message(text, type='error') {
+  notice.textContent = text;
+  notice.className = type;
+  notice.hidden = false;
+}
+function normalizeRole(value) {
+  const role = String(value || '').trim().toLowerCase().replace(/[ -]+/g, '_');
+  if (['admin','administrator','superadmin','super_admin'].includes(role)) return 'admin';
+  if (['mitra_usaha','mitrausaha','mitra','usaha'].includes(role)) return 'mitra_usaha';
+  if (['kurir','mitra_kurir','mitra_pengantaran','pengantar'].includes(role)) return 'kurir';
+  if (['pelanggan','customer','konsumen','user'].includes(role)) return 'pelanggan';
+  return role;
+}
+function pageForRole(role) {
+  // Nama file diarahkan ke halaman yang ada pada proyek saat ini.
+  if (role === 'admin') return 'admin.html';
+  if (role === 'mitra_usaha') return 'dashboard-mitra-perbaikan.html';
+  if (role === 'kurir') return 'dashboard-mitra-pengantaran-pencarian-status.html';
+  if (role === 'pelanggan') return 'index.html';
+  return null;
+}
+async function readAndRoute(user) {
+  if (!user || routing) return;
+  routing = true;
+  btn.disabled = true;
+  message('Login berhasil. Sedang membaca profil dan role akun…', 'success');
+  try {
+    const profileRef = doc(db, 'users', user.uid);
+    const profileSnap = await getDoc(profileRef);
+    if (!profileSnap.exists()) {
+      throw new Error('Dokumen users/' + user.uid + ' tidak ditemukan di proyek ' + firebaseConfig.projectId + '. Pastikan Document ID sama dengan UID Authentication.');
+    }
+    const profile = profileSnap.data();
+    const role = normalizeRole(profile.role);
+    if (!role) throw new Error('Field role pada users/' + user.uid + ' masih kosong.');
+
+    // Akun mitra/kurir yang masih menunggu verifikasi jangan dianggap aktif.
+    const status = String(profile.status || '').trim().toLowerCase();
+    const activeFlag = profile.aktif;
+    if ((role === 'mitra_usaha' || role === 'kurir') &&
+        (status.includes('menunggu') || status.includes('pending') || activeFlag === false)) {
+      throw new Error('Akun ' + (role === 'kurir' ? 'kurir' : 'mitra usaha') + ' masih menunggu persetujuan admin. Status: ' + (profile.status || (activeFlag === false ? 'nonaktif' : 'belum aktif')) + '.');
+    }
+    const target = pageForRole(role);
+    if (!target) throw new Error('Role tidak dikenali: "' + (profile.role || '(kosong)') + '". Role yang didukung: admin, mitra_usaha, kurir, pelanggan.');
+    message('Profil ditemukan. Membuka halaman ' + role + '…', 'success');
+    location.replace(target);
+  } catch (error) {
+    routing = false;
+    btn.disabled = false;
+    message(error.message || 'Tidak dapat membaca profil Firestore. Periksa Rules baca users/{UID}.');
+  }
+}
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (routing) return;
+  manualSubmit = true;
+  btn.disabled = true;
+  message('Memeriksa email dan password…', 'info');
+  try {
+    const result = await signInWithEmailAndPassword(auth, form.elements.email.value.trim(), form.elements.password.value);
+    await readAndRoute(result.user);
+  } catch (error) {
+    routing = false;
+    btn.disabled = false;
+    const code = error.code || '';
+    if (['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'].includes(code)) {
+      message('Email atau password salah. Pastikan akun sudah terdaftar di Firebase Authentication.');
+    } else if (code === 'auth/too-many-requests') {
+      message('Terlalu banyak percobaan login. Tunggu sebentar lalu coba kembali.');
+    } else {
+      message('Login gagal (' + (code || 'error') + '): ' + (error.message || 'Terjadi kesalahan.'));
+    }
+  }
+});
+onAuthStateChanged(auth, user => {
+  // Jangan mengalihkan saat halaman baru dibuka jika pengguna belum menekan tombol Masuk.
+  // Ini mencegah loop redirect dan memungkinkan pesan kesalahan dibaca.
+  if (user && manualSubmit && !routing) readAndRoute(user);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-Wallet | Toko Siap Antar</title>
+<style>
+:root{--green:#00a86b;--green2:#008b5a;--yellow:#ffcc00;--ink:#173b32;--muted:#64756f;--bg:#f1f2f4;--line:#e6e7e8;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#171717;font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button,a{-webkit-tap-highlight-color:transparent}
+.top{background:#111;color:#fff;padding:20px 16px 58px;border-radius:0 0 38px 38px}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:900px;margin:auto}
+.brand{font-weight:850;font-size:20px;letter-spacing:.2px;color:#ffcc00}.sub{color:#c7cbd0;font-size:13px;margin-top:3px}
+.logout{background:#202020;border:1px solid #444;color:white;border-radius:14px;padding:11px 15px;font-weight:700;cursor:pointer}
+main{max-width:760px;margin:-30px auto 0;padding:0 14px 100px;position:relative}
+.panel{background:#fff;border:0;border-radius:28px;padding:19px;margin-bottom:14px;box-shadow:0 8px 24px #00000008}
+.eyebrow{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.4px}.title{font-size:clamp(24px,6vw,32px);line-height:1.15;margin:7px 0 12px;font-weight:850;letter-spacing:-.6px}
+.muted{color:var(--muted)}
+.wallet{background:#fff;color:#171717;border:1px solid #e8e8e8;border-radius:24px;padding:18px;position:relative;overflow:hidden;box-shadow:none}
+.wallet-label{font-size:13px;color:#737d8b;font-weight:700}.balance{font-size:32px;font-weight:850;margin:4px 0 16px;letter-spacing:.2px;color:#171717;white-space:nowrap}
+.wallet-row{border-top:1px solid #e5e5e5;padding-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wallet-stat{min-width:0;border:1px solid #e8e8e8;border-radius:19px;background:#f7f8f8;padding:14px;display:flex;flex-direction:column;justify-content:center}
+.wallet-stat span{font-size:12px;color:#737d8b;font-weight:650}.wallet-stat strong{font-size:20px;line-height:1.25;margin-top:5px;color:#173b32;overflow-wrap:anywhere}
+.wallet-action{background:#ffc800;color:#171717;border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+.wallet-action.alt{background:#e5f8f0;color:#008b5a;border:1px solid #bdebd8}
+.notice{background:#fff8d8;border:1px solid #f4df80;border-radius:12px;padding:11px 13px;font-size:13px;color:#5c4b00;margin-top:12px}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 2px 12px}
+.section-title h2{font-size:18px;margin:0}.section-title span{font-size:12px;color:var(--muted);font-weight:700}
+.menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 2px}
+.menu{min-height:94px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;text-decoration:none;color:inherit;background:transparent;border:0}
+.menu-icon{width:56px;height:56px;border-radius:17px;background:#111;color:#ffcc00;display:grid;place-items:center;font-size:25px}
+.menu b{font-size:12px;line-height:1.2;font-weight:700}.menu small{display:none}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:3px solid #ffcc00;display:flex;justify-content:space-around;padding:9px 5px calc(9px + env(safe-area-inset-bottom));z-index:5}
+.bottom a{color:#ffcc00;text-decoration:none;text-align:center;font-size:11px;font-weight:750;min-width:54px}.bottom .ico{display:block;font-size:22px;margin-bottom:2px}
+.hidden{display:none!important}.err{color:#b42318;font-size:13px;margin-top:10px;overflow-wrap:anywhere}
+label{display:block;font-size:14px;font-weight:750;margin:12px 0 5px}input{width:100%;border:1px solid #cbd1d6;border-radius:12px;padding:12px;background:white}
+.submit{margin-top:14px;width:100%;background:var(--yellow);border:0;border-radius:12px;padding:13px;font-weight:850;cursor:pointer}
+/* Dashboard: judul besar di panel dihilangkan; hanya label peran kecil yang dipertahankan. */
+#dashboard>.panel:first-child{padding:19px!important;border-radius:28px!important}
+#dashboardTitle{display:none!important}
+#dashboard>.panel:nth-child(2){background:transparent!important;box-shadow:none!important;border-radius:0!important;padding:20px 4px!important;margin-top:8px!important}
+#dashboard>.panel:nth-child(2) .section-title{margin-bottom:14px!important}
+#dashboard>.panel:nth-child(2) .menu-grid{row-gap:10px}
+@media(max-width:420px){.wallet{padding:15px}.balance{font-size:29px}.wallet-stat{padding:12px 10px}.wallet-stat strong{font-size:18px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topline">
+ <div><div class="brand" id="brandName">🛵 TOKO SIAP ANTAR</div><div class="sub">E-Wallet & Pusat Aktivitas</div></div>
+ <button id="logoutBtn" class="logout hidden" type="button">Keluar</button>
+</div></header>
+<main>
+ <section id="loginPanel" class="panel">
+  <div class="eyebrow">AKSES AKUN</div><h1 class="title">Masuk E-Wallet</h1>
+  <form id="loginForm">
+   <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+   <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+   <button class="submit" type="submit">Masuk</button>
+  </form><div id="loginMsg" class="err" aria-live="polite"></div>
+ </section>
+ <section id="dashboard" class="hidden">
+  <div class="panel">
+   <div class="eyebrow">DASHBOARD <span id="roleLabel">AKUN</span></div>
+   <h1 class="title" id="dashboardTitle">Halo</h1>
+   <div class="wallet">
+    <div class="wallet-label">Sisa Saldo</div>
+    <div class="balance" id="balance">Rp 0</div>
+    <div class="wallet-row">
+     <div class="wallet-stat"><span>Total Pendapatan</span><strong id="totalIncome">Rp 0</strong></div>
+     <div class="wallet-stat"><span>Sudah Dicairkan</span><strong id="totalWithdrawn">Rp 0</strong></div>
+    </div>
+   </div>
+  </div>
+  <div class="panel">
+   <div class="section-title"><h2>Menu Utama</h2><span id="roleMenu">AKUN</span></div>
+   <div class="menu-grid" id="menuGrid"></div>
+  </div>
+ </section>
+</main>
+<nav class="bottom hidden" id="bottomNav">
+ <a href="#" data-menu="home"><span class="ico">⌂</span>Beranda</a>
+ <a href="#" data-menu="wallet"><span class="ico">💳</span>E-Wallet</a>
+ <a href="#" data-menu="orders"><span class="ico">📦</span>Pesanan</a>
+ <a href="#" data-menu="bills"><span class="ico">🧾</span>Tagihan</a>
+ <a href="#" data-menu="history"><span class="ico">↻</span>Riwayat</a>
+</nav>
+<script type="module">
+import {auth,db} from "./firebase-config.js";
+import {onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import {doc,getDoc,collection,query,where,getDocs,limit} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+const $=id=>document.getElementById(id);
+let profile=null,currentRole="";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rupiah=v=>"Rp "+Number(v||0).toLocaleString("id-ID");
+// Menu dan tautan dipisahkan berdasarkan paket role Toko Siap Antar.
+// Nama file mengikuti halaman yang tersedia pada paket masing-masing role.
+const menusByRole={
+ pelanggan:[
+  ["📦","Data Pesanan","Lihat status pesanan","data-pesanan.html"],
+  ["🛍️","Belanja","Cari produk","index.html"],
+  ["🧾","Tagihan","Tagihan belanja","pesanan.html"],
+  ["↻","Riwayat","Riwayat transaksi","riwayat.html"]
+ ],
+ mitra_usaha:[
+  ["📦","Data Pesanan","Pesanan toko","mitra-usaha.html"],
+  ["🛍️","Belanja Stok","Pembelian stok","mitra-usaha.html"],
+  ["↻","Riwayat","Riwayat transaksi","data-pesanan-mitra.html"],
+  ["↗","Pencairan Saldo","Pengajuan pencairan","mitra-dompet.html"]
+ ],
+ kurir:[
+  ["📦","Data Pesanan","Pesanan kurir","data-pesana-kurir.html"],
+  ["🛍️","Belanja","Buka toko","index.html"],
+  ["🧾","Tagihan","Tagihan kurir","mitra-dashboard.html"],
+  ["↻","Riwayat","Riwayat pengantaran","riwayat.html"],
+  ["↗","Pencairan Saldo","Pengajuan pencairan","mitra-dompet.html"]
+ ],
+ admin:[
+  ["📦","Data Pesanan","Pantau pesanan","data-pesanan-admin.html"],
+  ["🛍️","Belanja / Produk","Kelola katalog","produk-admin.html"],
+  ["↻","Riwayat","Aktivitas sistem","data-pesanan-admin.html"],
+  ["👥","Data Pengguna","Kelola pengguna","pengguna.html"],
+  ["✓","Approval","Persetujuan pesanan","admin-approval-pending.html"]
+ ]
+};
+const roleNames={pelanggan:"Pelanggan",mitra_usaha:"Mitra Usaha",kurir:"Kurir",admin:"Admin"};
+function normalizeRole(value){
+ const r=String(value??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[\s-]+/g,"_");
+ const aliases={
+  pelanggan:"pelanggan",customer:"pelanggan",user:"pelanggan",pengguna:"pelanggan",pembeli:"pelanggan",
+  mitra:"mitra_usaha",mitrausaha:"mitra_usaha",mitra_usaha:"mitra_usaha",merchant:"mitra_usaha",seller:"mitra_usaha",
+  kurir:"kurir",courier:"kurir",driver:"kurir",pengantar:"kurir",mitra_kurir:"kurir",
+  admin:"admin",administrator:"admin",superadmin:"admin",super_admin:"admin"
+ };
+ return aliases[r]||"";
+}
+function renderDashboard(user,p){
+ profile=p||{};currentRole=normalizeRole(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun??profile.userRole);
+ if(!menusByRole[currentRole])throw Error("Role akun belum dikenali. Nilai role pada profil: "+String(profile.role??profile.peran??profile.jenisAkun??"tidak tersedia")+". Periksa field role di dokumen users.");
+ const status=String(profile.status??profile.statusAkun??profile.accountStatus??"").trim().toLowerCase();
+ const inactive=["nonaktif","non-aktif","inactive","disabled","ditolak","pending","menunggu","belum aktif","suspended","blocked"];
+ if(status&&inactive.includes(status))throw Error("Akun berstatus '"+status+"'. Silakan hubungi admin.");
+ $("loginPanel").classList.add("hidden");$("dashboard").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottomNav").classList.remove("hidden");
+ $("roleLabel").textContent=roleNames[currentRole].toUpperCase();
+ const accountName=profile.nama||profile.namaUsaha||profile.name||profile.email||user.email||roleNames[currentRole];
+ $("brandName").textContent=accountName;
+ $("dashboardTitle").textContent="DASHBOARD "+roleNames[currentRole].toUpperCase();
+ $("roleMenu").textContent=roleNames[currentRole].toUpperCase();
+ // Navigasi bawah hanya menampilkan pintasan yang relevan untuk role.
+ // Admin memakai Approval sebagai pengganti Tagihan; Mitra Usaha tidak menampilkan Tagihan.
+ const bottomItems=[["home","⌂","Beranda"],["orders","📦","Pesanan"],...(currentRole==="admin"?[["approval","✓","Approval"]]:currentRole==="mitra_usaha"?[]:[["bills","🧾","Tagihan"]]),["history","↻","Riwayat"]];
+ $("bottomNav").innerHTML=bottomItems.map(([key,ico,label])=>`<a href="#" data-menu="${key}"><span class="ico">${ico}</span>${label}</a>`).join("");
+ const bal=profile.saldoEwallet??profile.saldoWallet??profile.saldo??profile.walletBalance??0;
+ $("balance").textContent=rupiah(bal);
+ const income=profile.totalPendapatan??profile.totalPenghasilan??profile.pendapatanTotal??profile.penghasilanTotal??0;
+ const withdrawn=profile.totalDicairkan??profile.totalPenarikanBerhasil??profile.penghasilanDicairkan??0;
+ $("totalIncome").textContent=rupiah(income);$("totalWithdrawn").textContent=rupiah(withdrawn);
+ $("menuGrid").innerHTML=menusByRole[currentRole].map(m=>`<a class="menu" href="${esc(m[3])}"><span class="menu-icon">${m[0]}</span><b>${esc(m[1])}</b><small>${esc(m[2])}</small></a>`).join("");
+}
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").textContent="Memeriksa akun…";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);$("loginMsg").textContent="";}catch(err){$("loginMsg").textContent="Login gagal: "+err.message;}});
+$("logoutBtn").onclick=()=>signOut(auth);
+$("bottomNav").addEventListener("click",e=>{const a=e.target.closest("a[data-menu]");if(!a)return;e.preventDefault();const key=a.dataset.menu;const map={orders:menusByRole[currentRole]?.find(m=>m[1]==="Data Pesanan")?.[3],bills:menusByRole[currentRole]?.find(m=>m[1]==="Tagihan")?.[3],history:menusByRole[currentRole]?.find(m=>m[1]==="Riwayat")?.[3],approval:menusByRole[currentRole]?.find(m=>m[1]==="Approval")?.[3]};if(key==="home")window.scrollTo({top:0,behavior:"smooth"});else if(map[key])location.href=map[key];});
+let authCheckInProgress=false;
+onAuthStateChanged(auth,async user=>{
+ if(!user){
+  $("loginPanel").classList.remove("hidden");$("dashboard").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottomNav").classList.add("hidden");
+  $("loginMsg").textContent="";return;
+ }
+ if(authCheckInProgress)return;authCheckInProgress=true;
+ try{
+  let profileData=null;
+  // Cara utama: dokumen users memakai UID sebagai ID dokumen.
+  const snap=await getDoc(doc(db,"users",user.uid));
+  if(snap.exists())profileData=snap.data();
+  // Cadangan 1: cari berdasarkan email persis (field email standar).
+  if(!profileData&&user.email){
+   const q=query(collection(db,"users"),where("email","==",user.email),limit(1));
+   const matches=await getDocs(q);
+   if(!matches.empty)profileData=matches.docs[0].data();
+  }
+  // Cadangan 2: baca dokumen users yang dapat diakses lalu cocokkan UID/email,
+  // termasuk variasi nama field yang umum dipakai proyek ini.
+  if(!profileData){
+   const allUsers=await getDocs(collection(db,"users"));
+   const emailLogin=String(user.email||"").trim().toLowerCase();
+   const found=allUsers.docs.find(d=>{
+    const x=d.data()||{};
+    const ids=[d.id,x.uid,x.userId,x.userID,x.authUid,x.firebaseUid].map(v=>String(v??"").trim());
+    const emails=[x.email,x.emailAddress,x.correo,x.gmail,x.userEmail].map(v=>String(v??"").trim().toLowerCase());
+    return ids.includes(user.uid)||(emailLogin&&emails.includes(emailLogin));
+   });
+   if(found)profileData=found.data();
+  }
+  if(!profileData)throw Error("Login Firebase berhasil, tetapi profil akun tidak ditemukan. Pastikan profil akun tersimpan di koleksi users, dengan UID dokumen atau field email yang cocok. Jika muncul permission-denied, periksa Firestore Rules agar pengguna dapat membaca profilnya sendiri.");
+  renderDashboard(user,profileData);$("loginMsg").textContent="";
+ }catch(err){
+  $("loginPanel").classList.remove("hidden");$("dashboard").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottomNav").classList.add("hidden");
+  $("loginMsg").textContent="Akun berhasil terautentikasi, tetapi dashboard gagal dibuka: "+(err?.message||"Kesalahan tidak diketahui");
+  // Jangan signOut otomatis: tampilkan penyebabnya agar tidak membuat login gagal tanpa penjelasan.
+ }finally{authCheckInProgress=false;}
+});
+</script>
+</body></html>
