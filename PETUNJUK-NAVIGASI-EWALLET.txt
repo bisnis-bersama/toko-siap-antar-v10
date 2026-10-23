@@ -1,0 +1,16 @@
+PEMBARUAN NAVIGASI E-WALLET — TOKO SIAP ANTAR
+
+Lima halaman E-Wallet telah ditambahkan menu navigasi masing-masing role:
+- Pelanggan: dashboard, toko, keranjang, checkout, pesanan, tracking, riwayat, tagihan, profil, E-Wallet.
+- Mitra Usaha: dashboard, pesanan masuk, stok, harga modal, riwayat, profil, E-Wallet.
+- Kurir: dashboard, pesanan tersedia, pengantaran, riwayat, penghasilan, profil, E-Wallet.
+- Admin: dashboard, semua pesanan, produk, data mitra/kurir/pelanggan, keuangan, verifikasi pencairan, pengaturan, E-Wallet.
+- Superadmin: dashboard, pengujian, pengembangan, pemeriksaan sistem, pengelolaan akses, E-Wallet.
+
+Menu navigasi muncul setelah akun berhasil login dan role akun cocok dengan halaman E-Wallet.
+Semua halaman tetap file HTML terpisah. Nama file pada tautan harus dipertahankan ketika diunggah ke folder/repository yang sama.
+
+PENTING:
+- Ini memperbarui navigasi/link ant halaman, bukan menyelesaikan seluruh logika bisnis.
+- Pastikan firebase-config.js tetap ada di root folder dan cocok dengan project Firebase.
+- Halaman non-E-Wallet dalam paket merupakan kerangka awal; alur pesanan, pembagian saldo, top-up gateway, dan pencairan nyata masih perlu integrasi backend tepercaya serta Firestore Rules yang aman.
