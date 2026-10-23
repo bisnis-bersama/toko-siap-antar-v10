@@ -1,23 +1,18 @@
-PERBAIKAN LIMA FILE E-WALLET TOKO SIAP ANTAR
+PERBAIKAN E-WALLET — LOGOUT DAN TAUTAN
 
-File di dalam ZIP adalah lima file sumber E-Wallet yang sudah diperbaiki:
-- ewallet-pelanggan.html
-- ewallet-mitra-usaha.html
-- ewallet-kurir.html
+Isi ZIP:
 - ewallet-admin.html
+- ewallet-kurir.html
+- ewallet-mitra-usaha.html
+- ewallet-pelanggan.html
 - ewallet-superadmin.html
 
 Perubahan:
-1. Tombol Keluar menjalankan signOut Firebase, lalu mengarahkan pengguna ke index.html.
-2. Setiap E-Wallet memiliki menu Halaman Utama menuju index.html.
-3. Setiap E-Wallet memiliki navigasi lengkap sesuai role, dengan tautan ke halaman yang telah disepakati.
-4. Navigasi dibuat responsif untuk HP dan desktop.
+1. Logout menunggu proses signOut Firebase, lalu memakai URL relatif yang benar untuk membuka ./index.html.
+2. Setiap halaman E-Wallet memiliki menu Halaman Utama.
+3. Setiap E-Wallet memiliki navigasi sesuai role ke halaman yang disepakati.
 
-Cara pasang:
-- Ekstrak ZIP.
-- Unggah lima file HTML ke root repositori GitHub yang sama dengan index.html dan firebase-config.js.
-- Timpa lima file E-Wallet lama.
-- Pastikan nama file halaman tujuan tetap sama persis.
-- Tes login, semua tautan navigasi, dan tombol Keluar.
+PENTING TENTANG ERROR 404:
+Menu hanya bisa membuka halaman yang benar-benar ada dan sudah ter-deploy di root GitHub Pages dengan nama persis sama. Jika salah satu file tujuan belum diunggah, atau nama filenya berbeda satu karakter, GitHub Pages tetap akan menampilkan 404. ZIP ini memperbaiki lima halaman E-Wallet, bukan membuat ulang seluruh halaman lain.
 
-Catatan: ZIP ini berisi lima file E-Wallet saja. File halaman lain dan index.html tidak diubah.
+Pasang dengan menimpa lima file E-Wallet di repositori yang sama dengan index.html dan firebase-config.js.
