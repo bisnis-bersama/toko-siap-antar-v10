@@ -30,9 +30,9 @@ label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}input,selec
 <main>
 <section id="loginPanel" class="panel"><div class="eyebrow">AKSES PELANGGAN</div><h1>Masuk Pelanggan</h1><p class="muted">Gunakan akun yang role Firebase-nya sesuai dengan halaman ini.</p>
 <form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn" style="width:100%;margin-top:14px" type="submit">Masuk</button></form><div id="loginMsg" class="err" aria-live="polite"></div></section>
-<section id="app" class="hidden"><div class="panel"><div class="eyebrow">RIWAYAT · PELANGGAN</div><h1>Riwayat Pelanggan</h1><p class="muted" id="greeting">Lihat catatan transaksi dan pesanan sebelumnya.</p><div class="notice">Akses dibatasi berdasarkan role akun. Data keuangan dan status transaksi tidak boleh diubah langsung tanpa verifikasi server.</div></div>
+<section id="app" class="hidden"><div class="panel"><div class="eyebrow">RIWAYAT · PELANGGAN</div><h1>Riwayat Pelanggan</h1><p class="muted" id="greeting">Semua pesanan yang sudah selesai tampil di sini. Tekan Beli Lagi untuk memasukkan produk pesanan sebelumnya ke keranjang.</p><div class="notice">Akses dibatasi berdasarkan role akun. Data keuangan dan status transaksi tidak boleh diubah langsung tanpa verifikasi server.</div></div>
 
-<div class="panel"><h2>Informasi & Aktivitas</h2><p class="muted">Lihat catatan transaksi dan pesanan sebelumnya.</p><div class="notice">Halaman ini menggunakan akses sesuai role. Fitur yang memengaruhi pesanan, saldo, atau hak akses perlu validasi backend dan Firestore Rules sebelum produksi.</div><div class="actions"><button class="btn" id="reloadBtn" type="button">Periksa Data</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Pilih “Periksa Data” untuk mencoba membaca data yang diizinkan.</div></div></div>
+<div class="panel"><h2>Riwayat Belanja</h2><p class="muted">Semua pesanan yang sudah selesai tampil di sini. Tekan Beli Lagi untuk memasukkan produk pesanan sebelumnya ke keranjang.</p><div class="notice">Halaman ini menggunakan akses sesuai role. Fitur yang memengaruhi pesanan, saldo, atau hak akses perlu validasi backend dan Firestore Rules sebelum produksi.</div><div class="actions"><button class="btn" id="reloadBtn" type="button">Periksa Data</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Pilih “Periksa Data” untuk mencoba membaca data yang diizinkan.</div></div></div>
 <div class="panel"><div class="itemtop"><h2>Menu Pelanggan</h2><span class="muted">Navigasi</span></div><div class="grid" style="margin-top:12px"><a class="tile" href="dashboard-pelanggan.html"><span class="ico">↗</span><strong>Dashboard Pelanggan</strong></a><a class="tile" href="toko-pelanggan.html"><span class="ico">↗</span><strong>Belanja Produk</strong></a><a class="tile" href="keranjang-pelanggan.html"><span class="ico">↗</span><strong>Keranjang Belanja</strong></a><a class="tile" href="checkout-pelanggan.html"><span class="ico">↗</span><strong>Checkout Pesanan</strong></a><a class="tile" href="pesanan-pelanggan.html"><span class="ico">↗</span><strong>Pesanan Saya</strong></a><a class="tile" href="tracking-pelanggan.html"><span class="ico">↗</span><strong>Lacak Pesanan</strong></a><a class="tile" href="profil-pelanggan.html"><span class="ico">↗</span><strong>Profil Pelanggan</strong></a><a class="tile" href="riwayat-pelanggan.html"><span class="ico">↗</span><strong>Riwayat Pelanggan</strong></a><a class="tile" href="tagihan-pelanggan.html"><span class="ico">↗</span><strong>Tagihan Pelanggan</strong></a><a class="tile" href="ewallet-pelanggan.html"><span class="ico">💳</span><strong>E-Wallet</strong></a></div></div>
 </section></main>
 <nav id="bottom" class="bottom hidden"><a href="dashboard-pelanggan.html">⌂ Beranda</a><a href="ewallet-pelanggan.html">💳 E-Wallet</a><a href="dashboard-pelanggan.html">☰ Menu</a></nav>
@@ -46,7 +46,62 @@ async function profileFor(u){const s=await getDoc(doc(db,"users",u.uid));if(s.ex
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").textContent="Memeriksa akun…";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);}catch(err){$("loginMsg").textContent="Login gagal: "+err.message;}});
 $("logoutBtn").onclick=()=>signOut(auth);
 let profile=null,userNow=null;
-onAuthStateChanged(auth,async u=>{if(!u){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}try{userNow=u;profile=await profileFor(u);const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);if(role!==EXPECTED)throw Error("Halaman ini khusus role Pelanggan. Role akun Anda: "+(role||"belum diatur")+".");const st=String(profile.status??profile.statusAkun??"aktif");if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(st.toLowerCase()))throw Error("Akun tidak aktif.");$("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Pelanggan")+" — Lihat catatan transaksi dan pesanan sebelumnya.";const stEl=$("accountStatus");if(stEl)stEl.textContent=st;}catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}});
-async function loadRecords(){const box=$("records");if(!box)return;box.innerHTML='<div class="muted">Memuat data…</div>';const filter=($("filter")?.value||"").toLowerCase();let col="orders";if(PAGE.includes("produk")||PAGE.includes("stok")||PAGE.includes("toko-pelanggan")||PAGE.includes("harga-modal"))col="products";else if(PAGE.includes("data-mitra")||PAGE.includes("data-kurir")||PAGE.includes("data-pelanggan")||PAGE.includes("pengelolaan-akses"))col="users";else if(PAGE.includes("keuangan"))col="ewallet_transactions";try{let q;if(EXPECTED==="admin"||EXPECTED==="superadmin")q=query(collection(db,col),limit(60));else q=query(collection(db,col),where("uid","==",userNow.uid),limit(60));const s=await getDocs(q);const docs=s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));box.innerHTML=docs.length?docs.map(x=>`<div class="item"><div class="itemtop"><strong>${String(x.nama||x.name||x.productName||x.namaProduk||x.nomorPesanan||x.orderNumber||x.id).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}</strong><span class="status">${String(x.status||x.role||"tercatat")}</span></div><div class="meta">ID: ${x.id}</div>${x.harga!=null||x.price!=null?`<div class="meta">Harga: Rp ${Number(x.harga??x.price).toLocaleString("id-ID")}</div>`:""}${x.createdAt?.toDate?`<div class="meta">${x.createdAt.toDate().toLocaleString("id-ID")}</div>`:""}</div>`).join(""):'<div class="muted">Tidak ada data yang cocok atau koleksi belum berisi data.</div>';}catch(err){box.innerHTML='<div class="err">Data tidak dapat dibaca. Periksa nama koleksi dan Firestore Rules. Detail: '+String(err.message).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</div>';}}
+onAuthStateChanged(auth,async u=>{if(!u){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}try{userNow=u;profile=await profileFor(u);const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);if(role!==EXPECTED)throw Error("Halaman ini khusus role Pelanggan. Role akun Anda: "+(role||"belum diatur")+".");const st=String(profile.status??profile.statusAkun??"aktif");if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(st.toLowerCase()))throw Error("Akun tidak aktif.");$("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Pelanggan")+" — Semua pesanan yang sudah selesai tampil di sini. Tekan Beli Lagi untuk memasukkan produk pesanan sebelumnya ke keranjang.";const stEl=$("accountStatus");if(stEl)stEl.textContent=st;loadRecords();}catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}});
+
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const low=v=>String(v??"").trim().toLowerCase().replace(/[\s-]+/g,"_");
+function paymentOf(o){return low(o.metodePembayaran??o.metode_pembayaran??o.paymentMethod??o.payment_method??o.metode??"");}
+function statusOf(o){return low(o.status??o.statusPesanan??o.orderStatus??"menunggu");}
+function paymentStatusOf(o){return low(o.statusPembayaran??o.paymentStatus??o.status_pembayaran??"");}
+function isCod(o){return ["cod","cash_on_delivery","bayar_di_tempat","tunai"].includes(paymentOf(o));}
+function isQris(o){return ["qris","transfer","bank_transfer","transfer_bank","ewallet","e_wallet"].includes(paymentOf(o));}
+function isComplete(o){return ["selesai","completed","complete","delivered","diterima","sudah_sampai","berhasil"].includes(statusOf(o));}
+function isPaid(o){return ["lunas","dibayar","paid","berhasil","success","terbayar","sudah_bayar"].includes(paymentStatusOf(o)) || o.sudahBayar===true || o.paid===true || o.isPaid===true;}
+function dateText(v){try{if(v?.toDate)return v.toDate().toLocaleString("id-ID");if(v?.seconds)return new Date(v.seconds*1000).toLocaleString("id-ID");if(v)return new Date(v).toLocaleString("id-ID");}catch{}return "Tanggal tidak tersedia";}
+function money(v){return "Rp "+(Number(v)||0).toLocaleString("id-ID");}
+function orderTitle(o){return o.nomorPesanan||o.orderNumber||o.nomor||o.id;}
+function orderItems(o){return Array.isArray(o.items)?o.items:(Array.isArray(o.produk)?o.produk:[]);}
+function itemName(i){return i.nama||i.name||i.productName||i.namaProduk||"Produk";}
+function renderOrder(o,showBuyAgain=false){
+ const items=orderItems(o), title=esc(orderTitle(o)), status=esc(o.status||o.statusPesanan||"menunggu");
+ const method=esc(String(o.metodePembayaran||o.paymentMethod||"tidak disebutkan").toUpperCase());
+ const detail=items.length?`<div style="margin-top:9px">${items.map(i=>`<div class="meta">• ${esc(itemName(i))} × ${Math.max(1,Number(i.qty??i.quantity)||1)} — ${money(i.subtotal??((Number(i.harga??i.price)||0)*(Number(i.qty??i.quantity)||1)))}</div>`).join("")}</div>`:'<div class="meta">Rincian produk tidak tersedia pada data pesanan.</div>';
+ const total=o.total??o.grandTotal??o.totalBayar??o.subtotal??0;
+ return `<div class="item"><div class="itemtop"><strong>${title}</strong><span class="status">${status}</span></div><div class="meta">Metode: ${method}</div><div class="meta">Tanggal: ${esc(dateText(o.createdAt||o.tanggal||o.created_at))}</div>${detail}<div class="meta" style="font-weight:850;color:#171717;margin-top:9px">Total: ${money(total)}</div>${o.alamatPengiriman?.alamat||o.alamat?`<div class="meta">Alamat: ${esc(o.alamatPengiriman?.alamat||o.alamat)}</div>`:""}<div class="actions">${showBuyAgain?`<button class="btn" type="button" data-buy-again="${esc(o.id)}">🛒 Beli Lagi</button>`:""}<a class="btn alt" style="text-decoration:none;display:inline-block" href="tracking-pelanggan.html">Lacak Pesanan</a></div></div>`;
+}
+async function fetchCustomerOrders(){
+ const q1=query(collection(db,"orders"),where("uid","==",userNow.uid),limit(150));
+ const s=await getDocs(q1);
+ const rows=s.docs.map(d=>({id:d.id,...d.data()}));window.__customerOrders=rows;return rows;
+}
+async function loadRecords(){
+ const box=$("records");if(!box||!userNow)return;
+ box.innerHTML='<div class="muted">Memuat data pesanan…</div>';
+ try{
+  let docs=await fetchCustomerOrders();
+  const filter=($("filter")?.value||"").trim().toLowerCase();
+  if(filter)docs=docs.filter(o=>JSON.stringify(o).toLowerCase().includes(filter));
+  docs.sort((a,b)=>{const ta=a.createdAt?.toDate?a.createdAt.toDate().getTime():0;const tb=b.createdAt?.toDate?b.createdAt.toDate().getTime():0;return tb-ta;});
+  let shown=[];
+  if(PAGE==="pesanan-pelanggan.html") shown=docs.filter(o=>isQris(o)&&!isComplete(o));
+  else if(PAGE==="tagihan-pelanggan.html") shown=docs.filter(o=>isCod(o)&&!(isComplete(o)&&isPaid(o)));
+  else shown=docs.filter(o=>isComplete(o)&&(!isCod(o)||isPaid(o)));
+  box.innerHTML=shown.length?shown.map(o=>renderOrder(o,PAGE==="riwayat-pelanggan.html")).join(""):'<div class="muted">Belum ada pesanan pada bagian ini.</div>';
+  if(PAGE==="pesanan-pelanggan.html"&&shown.length===0) box.innerHTML='<div class="muted">Tidak ada pesanan QRIS/transfer yang masih berjalan. Pesanan yang sudah selesai tampil di Riwayat Pelanggan.</div>';
+  if(PAGE==="tagihan-pelanggan.html"&&shown.length===0) box.innerHTML='<div class="muted">Tidak ada pesanan COD yang masih menunggu pembayaran di tempat. Pesanan COD yang sudah selesai dan lunas tampil di Riwayat Pelanggan.</div>';
+  if(PAGE==="riwayat-pelanggan.html"&&shown.length===0) box.innerHTML='<div class="muted">Belum ada pesanan selesai yang tercatat.</div>';
+ }catch(err){
+  box.innerHTML='<div class="err">Pesanan tidak dapat dibaca. Periksa Firestore Rules dan pastikan dokumen orders memiliki field uid sesuai akun pelanggan. Detail: '+esc(err.message)+'</div>';
+ }
+}
+$("records")?.addEventListener("click",e=>{
+ const btn=e.target.closest("[data-buy-again]");if(!btn)return;
+ const order=window.__customerOrders?.find(o=>o.id===btn.dataset.buyAgain);
+ if(!order){loadRecords();return;}
+ const cart=orderItems(order).map(i=>({id:i.produkId??i.productId??i.id??"",name:itemName(i),price:Number(i.harga??i.price)||0,qty:Math.max(1,Number(i.qty??i.quantity)||1),kode:i.kode||"",supplier:i.supplier||""}));
+ localStorage.setItem("tsa_cart",JSON.stringify(cart));localStorage.setItem("cart",JSON.stringify(cart));
+ location.href="toko-pelanggan.html?beliLagi=1";
+});
+
 $("reloadBtn")?.addEventListener("click",loadRecords);$("filter")?.addEventListener("input",()=>{if(userNow)loadRecords();});
 </script></body></html>
