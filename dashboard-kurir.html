@@ -36,21 +36,124 @@ label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}input,selec
 <div class="panel"><div class="eyebrow">ROLE</div><h2>Kurir</h2><div class="meta">Akses sesuai role</div></div>
 <div class="panel"><div class="eyebrow">E-WALLET</div><h2><a href="ewallet-kurir.html">Buka E-Wallet ↗</a></h2><div class="meta">Top-up dan pencairan</div></div>
 </div>
-<div class="panel"><h2>Informasi & Aktivitas</h2><p class="muted">Ringkasan pengantaran dan penghasilan.</p><div class="notice">Halaman ini menggunakan akses sesuai role. Fitur yang memengaruhi pesanan, saldo, atau hak akses perlu validasi backend dan Firestore Rules sebelum produksi.</div><div class="actions"><button class="btn" id="reloadBtn" type="button">Periksa Data</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Pilih “Periksa Data” untuk mencoba membaca data yang diizinkan.</div></div></div>
+<div class="panel"><h2>Estimasi Pendapatan Kurir</h2><p class="muted">Ringkasan ongkir dari pesanan yang diambil, selesai, dan ditolak. Nilai ini estimasi berdasarkan data ongkir pada pesanan.</p><div id="earningsSummary" style="margin-top:12px"></div></div><div class="panel"><h2>Informasi & Aktivitas</h2><p class="muted">Ringkasan pengantaran dan penghasilan.</p><div class="notice">Halaman ini menggunakan akses sesuai role. Fitur yang memengaruhi pesanan, saldo, atau hak akses perlu validasi backend dan Firestore Rules sebelum produksi.</div><div class="actions"><button class="btn" id="reloadBtn" type="button">Periksa Data</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Pilih “Periksa Data” untuk mencoba membaca data yang diizinkan.</div></div></div>
 <div class="panel"><div class="itemtop"><h2>Menu Kurir</h2><span class="muted">Navigasi</span></div><div class="grid" style="margin-top:12px"><a class="tile" href="dashboard-kurir.html"><span class="ico">↗</span><strong>Dashboard Kurir</strong></a><a class="tile" href="pesanan-tersedia-kurir.html"><span class="ico">↗</span><strong>Pesanan Tersedia</strong></a><a class="tile" href="pengantaran-kurir.html"><span class="ico">↗</span><strong>Pengantaran Aktif</strong></a><a class="tile" href="riwayat-pengantaran-kurir.html"><span class="ico">↗</span><strong>Riwayat Pengantaran</strong></a><a class="tile" href="penghasilan-kurir.html"><span class="ico">↗</span><strong>Penghasilan Kurir</strong></a><a class="tile" href="profil-kurir.html"><span class="ico">↗</span><strong>Profil Kurir</strong></a><a class="tile" href="ewallet-kurir.html"><span class="ico">💳</span><strong>E-Wallet</strong></a></div></div>
 </section></main>
 <nav id="bottom" class="bottom hidden"><a href="dashboard-kurir.html">⌂ Beranda</a><a href="ewallet-kurir.html">💳 E-Wallet</a><a href="dashboard-kurir.html">☰ Menu</a></nav>
 <script type="module">
 import {auth,db} from "./firebase-config.js";
 import {onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import {doc,getDoc,collection,getDocs,query,where,limit} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import {doc,getDoc,collection,getDocs,query,where,limit,runTransaction,serverTimestamp,arrayUnion} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 const $=id=>document.getElementById(id), EXPECTED="kurir", TITLE="Dashboard Kurir", PAGE="dashboard-kurir.html";
 function norm(v){let x=String(v??"").trim().toLowerCase().replace(/[\s-]+/g,"_");const a={customer:"pelanggan",user:"pelanggan",pembeli:"pelanggan",mitra:"mitra_usaha",mitrausaha:"mitra_usaha",merchant:"mitra_usaha",seller:"mitra_usaha",courier:"kurir",driver:"kurir",pengantar:"kurir",administrator:"admin",super_admin:"superadmin"};return a[x]||x;}
 async function profileFor(u){const s=await getDoc(doc(db,"users",u.uid));if(s.exists())return s.data();const q=query(collection(db,"users"),where("email","==",u.email||""),limit(1));const r=await getDocs(q);if(!r.empty)return r.docs[0].data();throw Error("Profil tidak ditemukan pada koleksi users.");}
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").textContent="Memeriksa akun…";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);}catch(err){$("loginMsg").textContent="Login gagal: "+err.message;}});
 $("logoutBtn").onclick=()=>signOut(auth);
 let profile=null,userNow=null;
-onAuthStateChanged(auth,async u=>{if(!u){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}try{userNow=u;profile=await profileFor(u);const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);if(role!==EXPECTED)throw Error("Halaman ini khusus role Kurir. Role akun Anda: "+(role||"belum diatur")+".");const st=String(profile.status??profile.statusAkun??"aktif");if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(st.toLowerCase()))throw Error("Akun tidak aktif.");$("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Kurir")+" — Ringkasan pengantaran dan penghasilan.";const stEl=$("accountStatus");if(stEl)stEl.textContent=st;}catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}});
-async function loadRecords(){const box=$("records");if(!box)return;box.innerHTML='<div class="muted">Memuat data…</div>';const filter=($("filter")?.value||"").toLowerCase();let col="orders";if(PAGE.includes("produk")||PAGE.includes("stok")||PAGE.includes("toko-pelanggan")||PAGE.includes("harga-modal"))col="products";else if(PAGE.includes("data-mitra")||PAGE.includes("data-kurir")||PAGE.includes("data-pelanggan")||PAGE.includes("pengelolaan-akses"))col="users";else if(PAGE.includes("keuangan"))col="ewallet_transactions";try{let q;if(EXPECTED==="admin"||EXPECTED==="superadmin")q=query(collection(db,col),limit(60));else q=query(collection(db,col),where("uid","==",userNow.uid),limit(60));const s=await getDocs(q);const docs=s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));box.innerHTML=docs.length?docs.map(x=>`<div class="item"><div class="itemtop"><strong>${String(x.nama||x.name||x.productName||x.namaProduk||x.nomorPesanan||x.orderNumber||x.id).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}</strong><span class="status">${String(x.status||x.role||"tercatat")}</span></div><div class="meta">ID: ${x.id}</div>${x.harga!=null||x.price!=null?`<div class="meta">Harga: Rp ${Number(x.harga??x.price).toLocaleString("id-ID")}</div>`:""}${x.createdAt?.toDate?`<div class="meta">${x.createdAt.toDate().toLocaleString("id-ID")}</div>`:""}</div>`).join(""):'<div class="muted">Tidak ada data yang cocok atau koleksi belum berisi data.</div>';}catch(err){box.innerHTML='<div class="err">Data tidak dapat dibaca. Periksa nama koleksi dan Firestore Rules. Detail: '+String(err.message).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</div>';}}
+onAuthStateChanged(auth,async u=>{if(!u){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}try{userNow=u;profile=await profileFor(u);const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);if(role!==EXPECTED)throw Error("Halaman ini khusus role Kurir. Role akun Anda: "+(role||"belum diatur")+".");const st=String(profile.status??profile.statusAkun??"aktif");if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(st.toLowerCase()))throw Error("Akun tidak aktif.");$("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Kurir")+" — Ringkasan pengantaran dan penghasilan.";const stEl=$("accountStatus");if(stEl)stEl.textContent=st;await loadRecords();}catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}});
+const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=v=>"Rp "+Number(v||0).toLocaleString("id-ID");
+const pick=(x,keys)=>{for(const k of keys){const v=x?.[k];if(v!==undefined&&v!==null&&v!=="")return v;}return "";};
+const statusOf=x=>String(pick(x,["status","statusPesanan","orderStatus"])||"").toLowerCase().trim().replace(/[\s-]+/g,"_");
+const courierOf=x=>pick(x,["kurirUid","courierUid","assignedCourierUid","uidKurir","idKurir"]);
+const courierRejected=x=>Array.isArray(x.kurirDitolakUids)?x.kurirDitolakUids:(Array.isArray(x.rejectedCourierUids)?x.rejectedCourierUids:[]);
+const ongkirOf=x=>Number(pick(x,["ongkir","biayaOngkir","tarifKurir","deliveryFee","shippingCost","ongkosKirim"])||0);
+const pickupOf=x=>pick(x,["lokasiPengambilan","alamatPengambilan","alamatToko","lokasiMitra","alamatMitra","pickupAddress","pickupLocation","merchantAddress","alamatAsal"]);
+const dropoffOf=x=>pick(x,["lokasiPengantaran","alamatPengantaran","alamatTujuan","alamatPelanggan","customerAddress","deliveryAddress","dropoffAddress","lokasiTujuan"]);
+const orderLabel=x=>pick(x,["nomorPesanan","orderNumber","invoice","kodePesanan"])||x.id;
+const isDone=s=>["selesai","selesai_diantar","completed","delivered","diterima_pelanggan","pesanan_selesai"].includes(s);
+const isRejected=s=>["ditolak_kurir","ditolak","rejected","kurir_menolak","penolakan_kurir"].includes(s);
+const isActive=s=>["dalam_pengantaran","diambil_kurir","kurir_mengantar","sedang_diantar","picked_up","in_delivery","on_delivery"].includes(s);
+const isMerchantApproved=s=>["disetujui_mitra","disetujui_oleh_mitra","approved_by_merchant","approved","siap_diantar","menunggu_kurir","tersedia_untuk_kurir","mitra_menyetujui","diterima_mitra"].includes(s);
+async function queryOrdersForCourier(){
+ const uid=userNow.uid, found=new Map(), errors=[];
+ const specs=[
+  ["kurirUid","==",uid],["courierUid","==",uid],["assignedCourierUid","==",uid],["uidKurir","==",uid],
+  ["kurirDitolakUids","array-contains",uid],["rejectedCourierUids","array-contains",uid]
+ ];
+ for(const [field,op,val] of specs){
+  try{const q=query(collection(db,"orders"),where(field,op,val),limit(100));const s=await getDocs(q);s.docs.forEach(d=>found.set(d.id,{id:d.id,...d.data()}));}
+  catch(e){errors.push(e);}
+ }
+ // Fetch merchant-approved / courier-pool statuses so available orders can be offered.
+ for(const status of ["disetujui_mitra","disetujui_oleh_mitra","approved_by_merchant","approved","siap_diantar","menunggu_kurir","tersedia_untuk_kurir","mitra_menyetujui","diterima_mitra","dalam_pengantaran","diambil_kurir","kurir_mengantar","sedang_diantar","selesai","selesai_diantar","completed","delivered","ditolak_kurir","ditolak","rejected","kurir_menolak"]){
+  for(const field of ["status","statusPesanan","orderStatus"]){
+   try{const q=query(collection(db,"orders"),where(field,"==",status),limit(100));const s=await getDocs(q);s.docs.forEach(d=>found.set(d.id,{id:d.id,...d.data()}));}
+   catch(e){errors.push(e);}
+  }
+ }
+ return {orders:[...found.values()],errors};
+}
+async function writeCourierDecision(id,decision,card){
+ const msg=card?.querySelector(".action-message");const buttons=card?.querySelectorAll("button[data-action]");
+ if(buttons)buttons.forEach(b=>b.disabled=true);if(msg){msg.className="meta";msg.textContent="Memproses keputusan…";}
+ try{
+  const ref=doc(db,"orders",id);
+  await runTransaction(db,async tx=>{
+   const snap=await tx.get(ref);if(!snap.exists())throw Error("Pesanan tidak ditemukan.");
+   const x={id:snap.id,...snap.data()},s=statusOf(x),current=courierOf(x),rejected=courierRejected(x);
+   if(decision==="take"){
+    if(current && current!==userNow.uid)throw Error("Pesanan sudah diambil kurir lain.");
+    if(!isMerchantApproved(s) && !isActive(s))throw Error("Pesanan tidak lagi tersedia untuk diambil.");
+    if(rejected.includes(userNow.uid))throw Error("Anda sudah menolak pesanan ini.");
+    tx.update(ref,{status:"dalam_pengantaran",kurirUid:userNow.uid,courierUid:userNow.uid,assignedCourierUid:userNow.uid,diambilKurirAt:serverTimestamp(),updatedAt:serverTimestamp()});
+   }else{
+    if(current && current!==userNow.uid)throw Error("Pesanan sudah ditugaskan kepada kurir lain.");
+    if(!isMerchantApproved(s) && !isActive(s))throw Error("Status pesanan sudah berubah.");
+    tx.update(ref,{status:"menunggu_kurir",kurirDitolakUids:arrayUnion(userNow.uid),rejectedCourierUids:arrayUnion(userNow.uid),lastRejectedCourierUid:userNow.uid,lastRejectedCourierAt:serverTimestamp(),kurirUid:"",courierUid:"",assignedCourierUid:"",updatedAt:serverTimestamp()});
+   }
+  });
+  if(msg){msg.className="ok";msg.textContent=decision==="take"?"Pesanan berhasil diambil. Silakan lanjutkan pengantaran.":"Penolakan dicatat. Pesanan kembali ke antrean kurir lain.";}
+  await loadRecords();
+ }catch(e){if(msg){msg.className="err";msg.textContent="Gagal: "+e.message;}if(buttons)buttons.forEach(b=>b.disabled=false);}
+}
+function orderCard(x,mode){
+ const s=statusOf(x),uid=userNow.uid,owner=courierOf(x),rejected=courierRejected(x);
+ const assignedToMe=owner===uid;
+ const available=isMerchantApproved(s)&&!owner&&!rejected.includes(uid);
+ const mine=assignedToMe||rejected.includes(uid);
+ const showButtons=mode==="active"&&available;
+ const title=esc(orderLabel(x));
+ return `<article class="item" data-order-id="${esc(x.id)}">
+ <div class="itemtop"><strong>Pesanan ${title}</strong><span class="status">${esc(s.replace(/_/g," ")||"tercatat")}</span></div>
+ <div class="meta">Lokasi pengambilan: <b>${esc(pickupOf(x)||"Belum tersedia")}</b></div>
+ <div class="meta">Lokasi pengantaran: <b>${esc(dropoffOf(x)||"Belum tersedia")}</b></div>
+ <div class="meta">Nominal ongkir: <b>${money(ongkirOf(x))}</b></div>
+ ${mode==="history"?`<div class="meta">Hasil: ${isDone(s)?"Selesai":isRejected(s)?"Ditolak kurir":esc(s.replace(/_/g," "))}</div>`:""}
+ ${showButtons?`<div class="actions"><button class="btn" type="button" data-action="take" data-id="${esc(x.id)}">Ambil</button><button class="btn dark" type="button" data-action="reject" data-id="${esc(x.id)}">Tolak</button></div><div class="action-message" aria-live="polite"></div>`:""}
+ </article>`;
+}
+async function loadRecords(){
+ const box=$("records");if(!box||!userNow)return;
+ box.innerHTML='<div class="muted">Memuat data pesanan…</div>';
+ const filter=($("filter")?.value||"").toLowerCase();
+ try{
+  const {orders,errors}=await queryOrdersForCourier();
+  let list=[];
+  if(PAGE==="pengantaran-kurir.html"){
+   list=orders.filter(x=>{const s=statusOf(x),owner=courierOf(x);return (isActive(s)&&owner===userNow.uid)||(isMerchantApproved(s)&&!owner&&!courierRejected(x).includes(userNow.uid));});
+   list=list.filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));
+   box.innerHTML=list.length?list.map(x=>orderCard(x,"active")).join(""):'<div class="muted">Belum ada pesanan siap diambil atau pengantaran aktif.</div>';
+  }else if(PAGE==="riwayat-pengantaran-kurir.html"){
+   list=orders.filter(x=>{const s=statusOf(x);return (courierOf(x)===userNow.uid||courierRejected(x).includes(userNow.uid))&&(isDone(s)||isRejected(s));});
+   list=list.filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));
+   box.innerHTML=list.length?list.map(x=>orderCard(x,"history")).join(""):'<div class="muted">Belum ada pesanan selesai atau ditolak dalam riwayat akun ini.</div>';
+  }else{
+   list=orders.filter(x=>courierOf(x)===userNow.uid||courierRejected(x).includes(userNow.uid));
+   list=list.filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));
+   const taken=list.filter(x=>courierOf(x)===userNow.uid&&!isRejected(statusOf(x)));
+   const rejectedList=list.filter(x=>courierRejected(x).includes(userNow.uid)||isRejected(statusOf(x)));
+   const earned=taken.filter(x=>isDone(statusOf(x))).reduce((n,x)=>n+ongkirOf(x),0);
+   const potential=taken.filter(x=>!isRejected(statusOf(x))).reduce((n,x)=>n+ongkirOf(x),0);
+   const declined=rejectedList.reduce((n,x)=>n+ongkirOf(x),0);
+   const cards=$("earningsSummary");
+   if(cards)cards.innerHTML=`<div class="grid"><div class="panel"><div class="eyebrow">ESTIMASI ONGKIR PESANAN DIAMBIL</div><h2>${money(potential)}</h2><div class="meta">Potensi ongkir dari pesanan yang diambil</div></div><div class="panel"><div class="eyebrow">PENDAPATAN SELESAI</div><h2>${money(earned)}</h2><div class="meta">Ongkir pesanan yang selesai</div></div><div class="panel"><div class="eyebrow">POTENSI ONGKIR DITOLAK</div><h2>${money(declined)}</h2><div class="meta">Nilai ongkir pesanan yang ditolak</div></div></div>`;
+   box.innerHTML=list.length?list.map(x=>orderCard(x,"dashboard")).join(""):'<div class="muted">Belum ada catatan pesanan untuk menghitung estimasi pendapatan.</div>';
+  }
+  if(!list.length&&errors.length)box.insertAdjacentHTML("beforeend",'<div class="err">Sebagian data tidak dapat dibaca. Periksa Firestore Rules agar kurir hanya dapat membaca pesanan yang ditugaskan atau tersedia.</div>');
+ }catch(err){box.innerHTML='<div class="err">Data tidak dapat dimuat: '+esc(err.message)+'</div>';}
+}
+$("records")?.addEventListener("click",e=>{const b=e.target.closest("button[data-action]");if(!b)return;const card=b.closest("[data-order-id]");if(card)writeCourierDecision(card.dataset.orderId,b.dataset.action,card);});
+
 $("reloadBtn")?.addEventListener("click",loadRecords);$("filter")?.addEventListener("input",()=>{if(userNow)loadRecords();});
 </script></body></html>

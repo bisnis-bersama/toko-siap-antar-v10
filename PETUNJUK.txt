@@ -1,18 +1,29 @@
-PATCH GPS TOKO SIAP ANTAR
+PAKET DISPATCH KURIR TERDEKAT - TOKO SIAP ANTAR
 
-Ganti file lama berikut dengan file dari paket ini:
-1. daftar-kurir.html
-2. daftar-mitra-usaha.html
+ISI PAKET
+- daftar-kurir.html: registrasi kurir + GPS
+- daftar-mitra-usaha.html: registrasi toko + GPS
+- pesanan-masuk-mitra-usaha.html: toko menerima/menolak pesanan
+- pengantaran-kurir.html: kurir melihat penawaran, Ambil/Tolak
+- dashboard-kurir.html dan riwayat-pengantaran-kurir.html
+- firebase-config.js
+- functions/: Firebase Cloud Functions untuk dispatch dan rotasi otomatis
 
-Perubahan:
-- Menambahkan tombol ambil GPS dengan izin browser.
-- Menampilkan koordinat dan perkiraan akurasi.
-- Membuat link Google Maps otomatis dari koordinat.
-- Menyimpan lat, lng, gpsLink, dan lokasi:{lat,lng} ke dokumen users/{uid}.
-- Pendaftaran ditahan jika GPS belum berhasil diambil.
-- Role/status verifikasi yang ada tetap dipertahankan.
+CARA KERJA
+1. Admin memverifikasi akun mitra dan kurir (aktif=true). Profil wajib punya lat/lng.
+2. Mitra menerima pesanan. Cloud Function memilih maksimal 3 kurir aktif terdekat dari GPS toko.
+3. Kurir hanya melihat pesanan yang masuk ke kurirDitawariUids. Harga barang tidak ditampilkan; yang ditampilkan hanya lokasi ambil, lokasi antar, dan ongkir.
+4. Kurir yang pertama berhasil menekan Ambil mengunci tugas lewat transaksi. Kurir yang menolak dicatat.
+5. Scheduler berjalan tiap menit; jika semua kurir dalam kelompok menolak atau 15 menit habis, sistem menawarkan ke maksimal 3 kurir berikutnya. Jika tidak ada kurir lagi, status menjadi perlu_penanganan_admin.
 
-Penting:
-- Uji melalui HTTPS (misalnya hosting GitHub Pages/Vercel), karena geolocation biasanya tidak bekerja pada halaman HTTP biasa.
-- Pengguna harus mengizinkan akses lokasi di browser dan mengaktifkan GPS perangkat.
-- Ini memperbaiki penyimpanan koordinat awal saat registrasi. Untuk menentukan 3 kurir terdekat secara akurat saat pesanan masuk, sistem perlu membaca koordinat kurir aktif dan menghubungkan logika penawaran pesanan; file dashboard/penawaran belum diubah dalam patch ini.
+PEMASANGAN
+A. Backup file lama. Salin file HTML dan firebase-config.js ke folder hosting sesuai nama file.
+B. Untuk Cloud Functions, salin folder functions ke root proyek Firebase (folder yang sama dengan firebase.json). Jalankan: npm install di folder functions, lalu firebase deploy --only functions.
+C. Scheduler Functions memerlukan proyek Firebase dengan billing/Blaze sesuai ketentuan Firebase. Deploy dan uji di proyek staging terlebih dahulu.
+D. Periksa Firestore Rules: hanya mitra yang ditugaskan boleh menerima pesanan; hanya kurir yang tercantum dalam kurirDitawariUids boleh menolak/mengambil; hanya kurir yang ditugaskan boleh mengubah status pengantaran. Cloud Functions memakai Admin SDK dan tidak dibatasi oleh Firestore Rules.
+E. Atur rules agar mitra dapat membaca profilnya sendiri dan pesanan yang ditugaskan. Jangan membuka koleksi users/orders untuk umum.
+
+BATASAN
+- Saya tidak dapat men-deploy Cloud Functions atau menguji operasi nyata di Firebase proyek Anda dari sini.
+- Fungsi pemilihan menggunakan koordinat GPS yang disimpan di profil. Ini lokasi awal/operasional, bukan GPS live; kurir perlu memperbarui koordinat profil bila berpindah area.
+- Fungsi scheduler berjalan tiap menit, jadi rotasi setelah 15 menit dapat terlambat hingga sekitar satu menit.

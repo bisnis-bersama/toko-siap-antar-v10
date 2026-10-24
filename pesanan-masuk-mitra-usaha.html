@@ -33,7 +33,7 @@ label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}input,selec
 <section id="app" class="hidden"><div class="panel"><div class="eyebrow">PESANAN MASUK · MITRA USAHA</div><h1>Pesanan Masuk</h1><p class="muted" id="greeting">Terima atau tolak penawaran pesanan yang masuk.</p><div class="notice">Akses dibatasi berdasarkan role akun. Data keuangan dan status transaksi tidak boleh diubah langsung tanpa verifikasi server.</div></div>
 
 <div class="panel"><div class="itemtop"><h2>Penawaran Pesanan Aktif</h2><span class="status">Respons maks. 15 menit</span></div>
-<div class="notice">Penawaran dapat dikirim ke beberapa mitra terdekat. Mitra yang menekan <b>Terima Pesanan</b> pertama kali akan mengunci pesanan. Target pengantaran adalah 60 menit sejak pesanan dibuat. Timer dan penguncian perlu didukung Firestore Rules/backend agar aman lintas perangkat.</div>
+<div class="notice">Saat toko menerima pesanan, backend memilih maksimal <b>3 kurir terdekat</b> berdasarkan GPS toko dan GPS operasional kurir. Kurir yang menekan <b>Ambil</b> pertama kali mengunci pesanan. Target pengantaran adalah 60 menit sejak pesanan dibuat. Timer dan penguncian perlu didukung Firestore Rules/backend agar aman lintas perangkat.</div>
 <div id="offerRecords" class="list" style="margin-top:12px"><div class="muted">Memuat penawaran…</div></div></div>
 <div class="panel"><div class="itemtop"><h2>Data Pesanan</h2><span class="muted">Firestore</span></div><p class="muted">Data yang tampil dibatasi berdasarkan penugasan mitra dan aturan akses Firebase. Nomor pesanan dapat dicari bila koleksi tersedia.</p><label for="filter">Cari nomor pesanan</label><input id="filter" placeholder="Masukkan nomor / ID pesanan"><div class="actions"><button class="btn" id="reloadBtn" type="button">Muat Ulang</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Memuat data…</div></div></div>
 <div class="panel"><div class="itemtop"><h2>Menu Mitra Usaha</h2><span class="muted">Navigasi</span></div><div class="grid" style="margin-top:12px"><a class="tile" href="dashboard-mitra-usaha.html"><span class="ico">↗</span><strong>Dashboard Mitra Usaha</strong></a><a class="tile" href="pesanan-masuk-mitra-usaha.html"><span class="ico">↗</span><strong>Pesanan Masuk</strong></a><a class="tile" href="stok-produk-mitra-usaha.html"><span class="ico">↗</span><strong>Stok Produk</strong></a><a class="tile" href="harga-modal-mitra-usaha.html"><span class="ico">↗</span><strong>Harga Modal</strong></a><a class="tile" href="riwayat-pesanan-mitra-usaha.html"><span class="ico">↗</span><strong>Riwayat Pesanan Mitra</strong></a><a class="tile" href="profil-mitra-usaha.html"><span class="ico">↗</span><strong>Profil Mitra Usaha</strong></a><a class="tile" href="ewallet-mitra-usaha.html"><span class="ico">💳</span><strong>E-Wallet</strong></a></div></div>
@@ -56,7 +56,7 @@ function asDate(v){if(!v)return null;if(typeof v.toDate==="function")return v.to
 function firstDate(x,keys){for(const k of keys){const d=asDate(x[k]);if(d)return d;}return null;}
 function fmtLeft(ms){if(ms<=0)return "00:00";const sec=Math.floor(ms/1000);return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");}
 function isAssignedToMe(x){const uid=userNow?.uid;return !!uid && (
- x.assignedMitraUid===uid || x.mitraUid===uid || x.uidMitra===uid ||
+ x.assignedMitraUid===uid || x.mitraUsahaUid===uid || x.mitraUid===uid || x.uidMitra===uid ||
  (Array.isArray(x.assignedMitraUids)&&x.assignedMitraUids.includes(uid)) ||
  (Array.isArray(x.mitraUids)&&x.mitraUids.includes(uid)) ||
  (Array.isArray(x.targetMitraUids)&&x.targetMitraUids.includes(uid))
@@ -91,6 +91,7 @@ async function fetchAssignedOrders(){
  const found=new Map(), uid=userNow.uid;
  const attempts=[
   query(collection(db,"orders"),where("assignedMitraUid","==",uid),limit(60)),
+  query(collection(db,"orders"),where("mitraUsahaUid","==",uid),limit(60)),
   query(collection(db,"orders"),where("mitraUid","==",uid),limit(60)),
   query(collection(db,"orders"),where("uidMitra","==",uid),limit(60)),
   query(collection(db,"orders"),where("assignedMitraUids","array-contains",uid),limit(60)),
@@ -125,12 +126,13 @@ async function handleOfferAction(id,action,card){
    const st=offerStart(x);
    if(st&&Date.now()>=st.getTime()+15*60*1000)throw Error("Batas respons 15 menit sudah habis.");
    if(action==="accept"){
-    tx.update(ref,{status:"diterima_mitra",acceptedByMitraUid:userNow.uid,acceptedByMitraAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    if(!isAssignedToMe(x))throw Error("Pesanan ini tidak ditugaskan kepada akun mitra Anda.");
+    tx.update(ref,{status:"diterima_mitra",acceptedByMitraUid:userNow.uid,acceptedByMitraAt:serverTimestamp(),mitraUsahaUid:userNow.uid,updatedAt:serverTimestamp()});
    }else{
     tx.update(ref,{declinedByMitraUids:arrayUnion(userNow.uid),lastDeclinedByMitraUid:userNow.uid,lastDeclinedAt:serverTimestamp(),updatedAt:serverTimestamp()});
    }
   });
-  msg.className="ok";msg.textContent=action==="accept"?"Pesanan berhasil diterima. Status telah diperbarui.":"Penolakan mitra dicatat. Backend perlu melewati mitra ini saat mengirim penawaran berikutnya.";
+  msg.className="ok";msg.textContent=action==="accept"?"Pesanan diterima. Sistem server akan memilih maksimal 3 kurir terdekat dan memulai penawaran 15 menit.":"Penolakan mitra dicatat. Pengalihan penawaran mitra berikutnya perlu diproses backend/admin.";
   await loadOffers();await loadRecords();
  }catch(err){msg.className="err";msg.textContent="Tidak berhasil: "+err.message;btns.forEach(b=>b.disabled=false);}
 }
