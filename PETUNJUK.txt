@@ -1,18 +1,18 @@
-PERBAIKAN E-WALLET — LOGOUT DAN TAUTAN
+PATCH GPS TOKO SIAP ANTAR
 
-Isi ZIP:
-- ewallet-admin.html
-- ewallet-kurir.html
-- ewallet-mitra-usaha.html
-- ewallet-pelanggan.html
-- ewallet-superadmin.html
+Ganti file lama berikut dengan file dari paket ini:
+1. daftar-kurir.html
+2. daftar-mitra-usaha.html
 
 Perubahan:
-1. Logout menunggu proses signOut Firebase, lalu memakai URL relatif yang benar untuk membuka ./index.html.
-2. Setiap halaman E-Wallet memiliki menu Halaman Utama.
-3. Setiap E-Wallet memiliki navigasi sesuai role ke halaman yang disepakati.
+- Menambahkan tombol ambil GPS dengan izin browser.
+- Menampilkan koordinat dan perkiraan akurasi.
+- Membuat link Google Maps otomatis dari koordinat.
+- Menyimpan lat, lng, gpsLink, dan lokasi:{lat,lng} ke dokumen users/{uid}.
+- Pendaftaran ditahan jika GPS belum berhasil diambil.
+- Role/status verifikasi yang ada tetap dipertahankan.
 
-PENTING TENTANG ERROR 404:
-Menu hanya bisa membuka halaman yang benar-benar ada dan sudah ter-deploy di root GitHub Pages dengan nama persis sama. Jika salah satu file tujuan belum diunggah, atau nama filenya berbeda satu karakter, GitHub Pages tetap akan menampilkan 404. ZIP ini memperbaiki lima halaman E-Wallet, bukan membuat ulang seluruh halaman lain.
-
-Pasang dengan menimpa lima file E-Wallet di repositori yang sama dengan index.html dan firebase-config.js.
+Penting:
+- Uji melalui HTTPS (misalnya hosting GitHub Pages/Vercel), karena geolocation biasanya tidak bekerja pada halaman HTTP biasa.
+- Pengguna harus mengizinkan akses lokasi di browser dan mengaktifkan GPS perangkat.
+- Ini memperbaiki penyimpanan koordinat awal saat registrasi. Untuk menentukan 3 kurir terdekat secara akurat saat pesanan masuk, sistem perlu membaca koordinat kurir aktif dan menghubungkan logika penawaran pesanan; file dashboard/penawaran belum diubah dalam patch ini.
