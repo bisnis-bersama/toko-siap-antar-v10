@@ -30,23 +30,94 @@ label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}input,selec
 <main>
 <section id="loginPanel" class="panel"><div class="eyebrow">AKSES MITRA USAHA</div><h1>Masuk Mitra Usaha</h1><p class="muted">Gunakan akun yang role Firebase-nya sesuai dengan halaman ini.</p>
 <form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn" style="width:100%;margin-top:14px" type="submit">Masuk</button></form><div id="loginMsg" class="err" aria-live="polite"></div></section>
-<section id="app" class="hidden"><div class="panel"><div class="eyebrow">RIWAYAT PESANAN · MITRA USAHA</div><h1>Riwayat Pesanan Mitra</h1><p class="muted" id="greeting">Lihat pesanan yang pernah ditangani.</p><div class="notice">Akses dibatasi berdasarkan role akun. Data keuangan dan status transaksi tidak boleh diubah langsung tanpa verifikasi server.</div></div>
+<section id="app" class="hidden"><div class="panel"><div class="eyebrow">RIWAYAT PESANAN · MITRA USAHA</div><h1>Riwayat Pesanan Mitra</h1><p class="muted" id="greeting">Pantau status pesanan yang sedang diantar kurir. Pesanan selesai akan berpindah ke Dashboard.</p><div class="notice">Akses dibatasi berdasarkan role akun. Data keuangan dan status transaksi tidak boleh diubah langsung tanpa verifikasi server.</div></div>
 
-<div class="panel"><div class="itemtop"><h2>Data Pesanan</h2><span class="muted">Firestore</span></div><p class="muted">Data yang tampil dibatasi oleh aturan akses Firebase. Nomor pesanan dapat dicari bila koleksi tersedia.</p><label for="filter">Cari nomor pesanan</label><input id="filter" placeholder="Masukkan nomor / ID pesanan"><div class="actions"><button class="btn" id="reloadBtn" type="button">Muat Ulang</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Memuat data…</div></div></div>
+<div class="panel"><div class="itemtop"><h2>Data Pesanan</h2><span class="muted">Firestore</span></div><p class="muted">Halaman ini hanya menampilkan pesanan milik mitra yang statusnya masih dalam proses pengantaran. Status selesai akan tampil di Dashboard.</p><label for="filter">Cari nomor pesanan</label><input id="filter" placeholder="Masukkan nomor / ID pesanan"><div class="actions"><button class="btn" id="reloadBtn" type="button">Muat Ulang</button></div><div id="records" class="list" style="margin-top:12px"><div class="muted">Memuat data…</div></div></div>
 <div class="panel"><div class="itemtop"><h2>Menu Mitra Usaha</h2><span class="muted">Navigasi</span></div><div class="grid" style="margin-top:12px"><a class="tile" href="dashboard-mitra-usaha.html"><span class="ico">↗</span><strong>Dashboard Mitra Usaha</strong></a><a class="tile" href="pesanan-masuk-mitra-usaha.html"><span class="ico">↗</span><strong>Pesanan Masuk</strong></a><a class="tile" href="stok-produk-mitra-usaha.html"><span class="ico">↗</span><strong>Stok Produk</strong></a><a class="tile" href="harga-modal-mitra-usaha.html"><span class="ico">↗</span><strong>Harga Modal</strong></a><a class="tile" href="riwayat-pesanan-mitra-usaha.html"><span class="ico">↗</span><strong>Riwayat Pesanan Mitra</strong></a><a class="tile" href="profil-mitra-usaha.html"><span class="ico">↗</span><strong>Profil Mitra Usaha</strong></a><a class="tile" href="ewallet-mitra-usaha.html"><span class="ico">💳</span><strong>E-Wallet</strong></a></div></div>
 </section></main>
 <nav id="bottom" class="bottom hidden"><a href="dashboard-mitra-usaha.html">⌂ Beranda</a><a href="ewallet-mitra-usaha.html">💳 E-Wallet</a><a href="dashboard-mitra-usaha.html">☰ Menu</a></nav>
 <script type="module">
 import {auth,db} from "./firebase-config.js";
 import {onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import {doc,getDoc,collection,getDocs,query,where,limit} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-const $=id=>document.getElementById(id), EXPECTED="mitra_usaha", TITLE="Riwayat Pesanan Mitra", PAGE="riwayat-pesanan-mitra-usaha.html";
-function norm(v){let x=String(v??"").trim().toLowerCase().replace(/[\s-]+/g,"_");const a={customer:"pelanggan",user:"pelanggan",pembeli:"pelanggan",mitra:"mitra_usaha",mitrausaha:"mitra_usaha",merchant:"mitra_usaha",seller:"mitra_usaha",courier:"kurir",driver:"kurir",pengantar:"kurir",administrator:"admin",super_admin:"superadmin"};return a[x]||x;}
+import {doc,getDoc,collection,getDocs,query,where,limit,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+const $=id=>document.getElementById(id), EXPECTED="mitra_usaha", PAGE="riwayat-pesanan-mitra-usaha.html";
 async function profileFor(u){const s=await getDoc(doc(db,"users",u.uid));if(s.exists())return s.data();const q=query(collection(db,"users"),where("email","==",u.email||""),limit(1));const r=await getDocs(q);if(!r.empty)return r.docs[0].data();throw Error("Profil tidak ditemukan pada koleksi users.");}
+function norm(v){return String(v??"").trim().toLowerCase().replace(/[\s-]+/g,"_").normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function money(v){const n=Number(v);return Number.isFinite(n)?n.toLocaleString("id-ID"):"0";}
+function statusOf(o){return norm(o.statusPengiriman??o.deliveryStatus??o.status_pengiriman??o.statusAntar??o.status??o.statusPesanan??o.orderStatus??"menunggu");}
+function statusLabel(s){const labels={menunggu:"Menunggu harga",pending:"Menunggu harga",baru:"Pesanan baru",menunggu_persetujuan:"Menunggu persetujuan",menunggu_konfirmasi_mitra:"Menunggu konfirmasi mitra",disetujui:"Disetujui",diproses:"Sedang diproses",siap_diambil:"Siap diambil kurir",kurir_ditugaskan:"Kurir ditugaskan",dalam_pengantaran:"Sedang diantar kurir",sedang_diantar:"Sedang diantar kurir",diantar:"Sedang diantar kurir",on_delivery:"Sedang diantar kurir",picked_up:"Sudah diambil kurir",terkirim:"Selesai diantar",selesai:"Selesai diantar",completed:"Selesai diantar",delivered:"Selesai diantar",ditolak:"Ditolak",dibatalkan:"Dibatalkan"};return labels[s]||String(s||"Status belum diatur").replace(/_/g," ");}
+function isPending(o){return ["menunggu","pending","baru","pesanan_baru","menunggu_harga","menunggu_persetujuan","menunggu_konfirmasi_mitra","menunggu_mitra","menunggu_konfirmasi","requested","awaiting_approval","new"].includes(statusOf(o));}
+function isDelivery(o){return ["kurir_ditugaskan","siap_diambil","siap_diambil_kurir","diambil_kurir","picked_up","dalam_pengantaran","sedang_diantar","diantar","dikirim","on_delivery","out_for_delivery","dalam_perjalanan","pengantaran"].includes(statusOf(o));}
+function isComplete(o){return ["selesai","selesai_diantar","terkirim","delivered","completed","complete","pesanan_selesai","sudah_diterima","diterima_pelanggan"].includes(statusOf(o));}
+function belongsToMitra(o){
+ const ids=[o.mitraUid,o.merchantUid,o.sellerUid,o.ownerUid,o.pemilikUid,o.tokoUid,o.idMitra,o.mitraId,o.merchantId,o.sellerId,o.uidMitra,o.userMitraUid,o.createdByMitraUid,o.mitra?.uid,o.merchant?.uid,o.seller?.uid,o.owner?.uid].filter(v=>v!=null).map(String);
+ const names=[o.namaMitra,o.namaToko,o.mitraNama,o.merchantName,o.sellerName].filter(Boolean).map(norm);
+ const myNames=[profile?.nama,profile?.namaUsaha,profile?.name,profile?.namaToko].filter(Boolean).map(norm);
+ return ids.includes(userNow.uid)||names.some(n=>myNames.includes(n));
+}
+async function getMitraOrders(){
+ const fields=["mitraUid","merchantUid","sellerUid","ownerUid","pemilikUid","tokoUid","idMitra","mitraId","merchantId","sellerId","uidMitra","userMitraUid","createdByMitraUid"];
+ const found=new Map(), errors=[];
+ for(const field of fields){
+  try{const snap=await getDocs(query(collection(db,"orders"),where(field,"==",userNow.uid),limit(100)));snap.docs.forEach(d=>found.set(d.id,{id:d.id,...d.data()}));}
+  catch(e){errors.push(e);}
+ }
+ if(!found.size && errors.length===fields.length) throw errors[0];
+ // Fallback only if the rules allow reading the collection; every record is filtered by explicit mitra ownership.
+ try{const snap=await getDocs(query(collection(db,"orders"),limit(100)));snap.docs.forEach(d=>{const o={id:d.id,...d.data()};if(belongsToMitra(o))found.set(d.id,o);});}
+ catch(e){if(!found.size)throw e;}
+ return [...found.values()].filter(belongsToMitra);
+}
+function orderTitle(o){return o.nomorPesanan||o.orderNumber||o.kodePesanan||o.namaProduk||o.productName||o.nama||o.name||("Pesanan "+o.id.slice(0,8));}
+function orderItems(o){
+ const arr=Array.isArray(o.items)?o.items:Array.isArray(o.produk)?o.produk:Array.isArray(o.itemsPesanan)?o.itemsPesanan:Array.isArray(o.cart)?o.cart:[];
+ if(arr.length)return arr.map(i=>`${esc(i.namaProduk||i.productName||i.nama||i.name||i.produk||"Produk")} × ${esc(i.qty??i.quantity??i.jumlah??1)}`).join("<br>");
+ return esc(o.detailProduk||o.namaProduk||o.productName||o.produk||o.deskripsi||"Detail barang tidak tersedia");
+}
+function orderDate(o){const d=o.createdAt?.toDate?o.createdAt.toDate():o.created_at?.toDate?o.created_at.toDate():o.createdAt?new Date(o.createdAt):o.tanggalPesanan?new Date(o.tanggalPesanan):null;return d&&!Number.isNaN(d.getTime())?d.toLocaleString("id-ID"):"Waktu pesanan tidak tersedia";}
+function orderCustomer(o){return o.namaPelanggan||o.customerName||o.namaPemesan||o.pelangganNama||o.nama||o.name||o.emailPelanggan||"Pelanggan";}
+function orderAddress(o){return o.alamatPengiriman||o.alamat||o.address||o.alamatPelanggan||"";}
+function renderOrder(o,mode){
+ const st=statusOf(o), title=esc(orderTitle(o)), price=o.hargaMitra??o.hargaTotal??o.totalHarga??o.total??o.harga??o.price;
+ let html=`<article class="item"><div class="itemtop"><strong>${title}</strong><span class="status">${esc(statusLabel(st))}</span></div>
+ <div class="meta">ID Pesanan: ${esc(o.id)}</div><div class="meta">Pelanggan: ${esc(orderCustomer(o))}</div>
+ <div class="meta">Barang: ${orderItems(o)}</div>${orderAddress(o)?`<div class="meta">Alamat: ${esc(orderAddress(o))}</div>`:""}
+ <div class="meta">Dibuat: ${esc(orderDate(o))}</div>
+ ${price!=null?`<div class="meta"><strong>Harga pesanan: Rp ${money(price)}</strong></div>`:""}
+ ${o.namaKurir||o.courierName||o.kurirNama?`<div class="meta">Kurir: ${esc(o.namaKurir||o.courierName||o.kurirNama)}</div>`:""}
+ ${o.statusPengiriman||o.deliveryStatus?`<div class="meta">Status pengiriman: ${esc(statusLabel(norm(o.statusPengiriman||o.deliveryStatus)))}</div>`:""}`;
+ if(mode==="incoming") html+=`<label for="price-${esc(o.id)}">Isi harga pesanan (Rp)</label><input id="price-${esc(o.id)}" type="number" min="1" step="1" value="${price!=null?esc(price):""}" placeholder="Masukkan harga total" inputmode="numeric"><div class="actions"><button class="btn" type="button" data-approve="${esc(o.id)}">Simpan Harga & Setujui</button></div>`;
+ html+="</article>";return html;
+}
+
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").textContent="Memeriksa akun…";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);}catch(err){$("loginMsg").textContent="Login gagal: "+err.message;}});
 $("logoutBtn").onclick=()=>signOut(auth);
 let profile=null,userNow=null;
-onAuthStateChanged(auth,async u=>{if(!u){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}try{userNow=u;profile=await profileFor(u);const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);if(role!==EXPECTED)throw Error("Halaman ini khusus role Mitra Usaha. Role akun Anda: "+(role||"belum diatur")+".");const st=String(profile.status??profile.statusAkun??"aktif");if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(st.toLowerCase()))throw Error("Akun tidak aktif.");$("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Mitra Usaha")+" — Lihat pesanan yang pernah ditangani.";const stEl=$("accountStatus");if(stEl)stEl.textContent=st;}catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}});
-async function loadRecords(){const box=$("records");if(!box)return;box.innerHTML='<div class="muted">Memuat data…</div>';const filter=($("filter")?.value||"").toLowerCase();let col="orders";if(PAGE.includes("produk")||PAGE.includes("stok")||PAGE.includes("toko-pelanggan")||PAGE.includes("harga-modal"))col="products";else if(PAGE.includes("data-mitra")||PAGE.includes("data-kurir")||PAGE.includes("data-pelanggan")||PAGE.includes("pengelolaan-akses"))col="users";else if(PAGE.includes("keuangan"))col="ewallet_transactions";try{let q;if(EXPECTED==="admin"||EXPECTED==="superadmin")q=query(collection(db,col),limit(60));else q=query(collection(db,col),where("uid","==",userNow.uid),limit(60));const s=await getDocs(q);const docs=s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!filter||JSON.stringify(x).toLowerCase().includes(filter));box.innerHTML=docs.length?docs.map(x=>`<div class="item"><div class="itemtop"><strong>${String(x.nama||x.name||x.productName||x.namaProduk||x.nomorPesanan||x.orderNumber||x.id).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}</strong><span class="status">${String(x.status||x.role||"tercatat")}</span></div><div class="meta">ID: ${x.id}</div>${x.harga!=null||x.price!=null?`<div class="meta">Harga: Rp ${Number(x.harga??x.price).toLocaleString("id-ID")}</div>`:""}${x.createdAt?.toDate?`<div class="meta">${x.createdAt.toDate().toLocaleString("id-ID")}</div>`:""}</div>`).join(""):'<div class="muted">Tidak ada data yang cocok atau koleksi belum berisi data.</div>';}catch(err){box.innerHTML='<div class="err">Data tidak dapat dibaca. Periksa nama koleksi dan Firestore Rules. Detail: '+String(err.message).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</div>';}}
+onAuthStateChanged(auth,async u=>{
+ if(!u){userNow=null;profile=null;$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("bottom").classList.add("hidden");return;}
+ try{
+  userNow=u;profile=await profileFor(u);
+  const role=norm(profile.role??profile.peran??profile.jenisAkun??profile.tipeAkun);
+  if(!["mitra_usaha","mitra","merchant","seller"].includes(role))throw Error("Halaman ini khusus role Mitra Usaha. Role akun Anda: "+(role||"belum diatur")+".");
+  const st=String(profile.status??profile.statusAkun??"aktif");
+  if(["nonaktif","inactive","disabled","ditolak","suspended","blocked"].includes(norm(st)))throw Error("Akun tidak aktif.");
+  $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("bottom").classList.remove("hidden");
+  const greet=$("greeting");if(greet)greet.textContent="Halo, "+(profile.nama||profile.namaUsaha||profile.name||u.email||"Mitra Usaha")+" — "+"Pantau pesanan yang sedang diantar kurir.";
+  const stEl=$("accountStatus");if(stEl)stEl.textContent=st;
+  await loadRecords();
+ }catch(err){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("loginMsg").textContent="Halaman tidak dapat dibuka: "+err.message;}
+});
+
+async function loadRecords(){
+ const box=$("records");box.innerHTML='<div class="muted">Memuat pesanan yang sedang diantar…</div>';
+ try{
+  const all=await getMitraOrders(), filter=($("filter")?.value||"").trim().toLowerCase();
+  const list=all.filter(isDelivery).filter(o=>!filter||JSON.stringify(o).toLowerCase().includes(filter)).sort((a,b)=>((b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0)));
+  box.innerHTML=list.length?list.map(o=>renderOrder(o,"history")).join(""):'<div class="muted">Belum ada pesanan yang sedang diantar kurir. Pesanan selesai akan tampil di Dashboard Mitra Usaha.</div>';
+ }catch(err){box.innerHTML='<div class="err">Riwayat tidak dapat dibaca: '+esc(err.message)+'. Periksa Firestore Rules dan field pemilik mitra.</div>';}
+}
+
 $("reloadBtn")?.addEventListener("click",loadRecords);$("filter")?.addEventListener("input",()=>{if(userNow)loadRecords();});
 </script></body></html>
