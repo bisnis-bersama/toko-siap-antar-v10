@@ -32,13 +32,4 @@ let aq=$('adminQueue');if(aq)aq.onclick=async e=>{let b=e.target.closest('[data-
 document.querySelectorAll('[data-scroll]').forEach(a=>a.onclick=e=>{e.preventDefault();let k=a.dataset.scroll;let target=k==='top'?document.body:k==='wallet'?$('topupForm'):$(k);target.scrollIntoView({behavior:'smooth'});});
 onAuthStateChanged(auth,async u=>{if(!u){$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('bottomNav').classList.add('hidden');return;}try{user=u;profile=await getProfile(u);let actual=roleOf(profile);if(actual!==ROLE)throw Error('Halaman ini khusus role Pelanggan; role akun Anda '+(actual||'belum disetel')+'.');balance=Number(profile.saldoEwallet??profile.saldoWallet??profile.saldo??profile.walletBalance??0)||0;$('balance').textContent=money(balance);$('income').textContent=money(profile.totalPendapatan??profile.totalPenghasilan??profile.totalTopup??0);$('withdrawn').textContent=money(profile.totalDicairkan??profile.totalPenarikanBerhasil??0);$('welcome').textContent='Halo, '+(profile.nama||profile.namaUsaha||profile.name||u.email||'Pelanggan');$('savedBank').value=profile.bankName||'';$('savedNumber').value=profile.bankAccountNumber||'';$('savedName').value=profile.bankAccountName||'';$('loginPanel').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');$('bottomNav').classList.remove('hidden');await refresh();}catch(x){$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('loginMsg').textContent='Dashboard gagal dibuka: '+x.message;}});
 
-// Navigasi menu E-Wallet: pastikan klik menu membuka file HTML tujuan di tab yang sama.
-document.addEventListener('click', function (event) {
-  const link = event.target.closest('#roleNavigation a.menu, .panel a.menu');
-  if (!link) return;
-  const href = link.getAttribute('href');
-  if (!href || !/^\.\/[^?#]+\.html(?:[?#].*)?$/.test(href)) return;
-  event.preventDefault();
-  window.location.assign(new URL(href, window.location.href).href);
-});
 </script></body></html>
