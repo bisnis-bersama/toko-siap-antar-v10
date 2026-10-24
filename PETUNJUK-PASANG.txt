@@ -1,0 +1,23 @@
+PAKET ADMIN TERINTEGRASI — TOKO SIAP ANTAR
+
+ISI
+- dashboard-admin.html: dashboard admin dengan keterangan alur GPS/dispatch
+- semua-pesanan-admin.html: monitor status pesanan, batch dispatch, kurir ditawari/menolak, lokasi, dispatchError
+- data-mitra-admin.html: verifikasi/aktif/nonaktif mitra, GPS toko
+- data-kurir-admin.html: verifikasi/aktif/nonaktif kurir, GPS kurir
+- data-pelanggan-admin.html: daftar pelanggan dan lokasi pengiriman
+- functions/index.js: backend dispatch dari paket sebelumnya
+
+PEMASANGAN
+1. Backup halaman admin lama terlebih dahulu.
+2. Salin lima file HTML ke folder hosting yang sama dengan firebase-config.js. Jangan mengganti firebase-config.js dengan konfigurasi contoh.
+3. Salin isi functions/index.js ke folder functions pada proyek Firebase yang sama dengan firebase.json, lalu jalankan npm install di folder functions dan firebase deploy --only functions.
+4. Uji pada akun admin dan data percobaan dahulu. Halaman verifikasi menulis users.status/aktif, verified, verifiedAt, verifiedBy, updatedAt. Firestore Rules harus mengizinkan admin yang terverifikasi melakukan perubahan tersebut.
+5. Backend dispatch memakai users.role == kurir, aktif == true, status bukan status blokir, serta lat/lng. Profil mitra juga harus memiliki lat/lng.
+6. Halaman Semua Pesanan hanya membaca data orders; tidak mengubah status dispatch agar tidak bentrok dengan Cloud Functions.
+
+PENTING
+- Belum dideploy atau diuji ke proyek Firebase nyata.
+- Cloud Functions memakai acceptedByMitraUid sebagai penanda penerimaan mitra; halaman pesanan mitra harus menulis field itu saat menyetujui pesanan.
+- Rotasi offer setiap 15 menit memerlukan Cloud Scheduler dan billing yang sesuai.
+- Pastikan Firestore Rules tidak membuka users/orders kepada publik.
